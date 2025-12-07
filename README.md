@@ -433,6 +433,11 @@ Permite gestionar listas desplegables del sistema:
 2. Click "Añadir"
 3. Aparece en lista
 
+**Modificar Elemento:**
+1. Click en el nombre que se quiere modificar.
+2. Escribir el nuevo nombre o modificar el actual.
+3. Aparece en lista
+   
 **Eliminar Elemento:**
 1. Click en botón `×` rojo
 2. Confirmar
