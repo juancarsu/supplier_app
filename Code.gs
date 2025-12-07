@@ -89,22 +89,32 @@ function openSuppliersList() {
 }
 
 // ===== Enrutamiento Web (doGet) =====
+
 function doGet(e) {
   var page = (e && e.parameter && e.parameter.page) || 'dashboard';
   var title = 'Panel de Control';
   var filename = page;
 
-  if (page === 'suppliers')     title = 'Gestión de Proveedores';
-  else if (page === 'orders')   title = 'Gestión de Pedidos';
-  else if (page === 'orders_list') { title = 'Listado de Pedidos'; filename = 'orders_list'; }
-  else if (page === 'auxiliary')    { title = 'Configuración';      filename = 'auxiliary_management'; }
-  else if (page === 'authorizations') { title = 'Autorizaciones';   filename = 'authorizations'; }
+  if (page === 'suppliers') {
+    title = 'Gestión de Proveedores';
+  } else if (page === 'orders') {
+    title = 'Gestión de Pedidos';
+  } else if (page === 'orders_list') {
+    title = 'Listado de Pedidos';
+    filename = 'orders_list';
+  } else if (page === 'aux' || page === 'auxiliary' || page === 'auxiliary_management') {
+    title = 'Configuración de Datos Auxiliares';
+    filename = 'auxiliary_management'; // <- nombre del archivo HTML sin extensión
+  } else if (page === 'authorizations') {
+    title = 'Autorizaciones';
+    filename = 'authorizations';
+  }
 
   try {
     var template = HtmlService.createTemplateFromFile(filename);
-    template.data       = e ? (e.parameter || {}) : {};
-    template.appUrl     = getAppUrl_();             // URL del deployment activo (o null si no hay)
-    template.ordersPage = getPreferredOrdersPage(); // 'orders' | 'orders_list' | 'dashboard'
+    template.data = e ? (e.parameter || {}) : {};
+    template.appUrl = getAppUrl_();
+    template.ordersPage = getPreferredOrdersPage();
     return template.evaluate()
       .setTitle(title)
       .addMetaTag('viewport', 'width=device-width, initial-scale=1');
@@ -862,4 +872,115 @@ function testAuditWrite() {
     extras: 'Prueba manual'
   });
   Logger.log(res);
+}
+
+
+/** ==========================================
+ *  📚 API Auxiliares (Compradores, Medios, Zonas, Edificios, Solicitantes)
+ *  Endpoints para auxiliary_management.html
+ *  ========================================== */
+
+// Mapa de tipo → hoja y columnas (coincide con SHEETS y getHeaders)
+const AUX_TYPE_MAP = {
+  'Compradores':   { sheet: SHEETS.COMPRADORES,    idCol: 'Id_Comprador',   valueCol: 'Nombre Comprador'   },
+  'MediosPedido':  { sheet: SHEETS.MEDIOS_PEDIDO,  idCol: 'Id_Medio',       valueCol: 'Medio de Pedido'    },
+  'Zonas':         { sheet: SHEETS.ZONAS,          idCol: 'Id_Zona',        valueCol: 'Nombre Zona'        },
+  'Edificios':     { sheet: SHEETS.EDIFICIOS,      idCol: 'Id_Edificio',    valueCol: 'Nombre Edificio'    },
+  'Solicitantes':  { sheet: SHEETS.SOLICITANTES,   idCol: 'Id_Solicitante', valueCol: 'Nombre Solicitante' }
+};
+
+/** Asegura que la hoja tenga cabeceras correctas si está vacía. */
+function ensureHeaders(sheetName) {
+  const sh = getSheet(sheetName);
+  if (sh.getLastRow() === 0) {
+    const headers = getHeaders(sheetName);
+    if (headers && headers.length) {
+      sh.getRange(1, 1, 1, headers.length).setValues([headers]);
+    }
+  }
+  return sh;
+}
+
+/** Devuelve [{id, name}] del tipo auxiliar indicado. */
+function listAux(type) {
+  const meta = AUX_TYPE_MAP[type];
+  if (!meta) throw new Error('Tipo auxiliar no reconocido: ' + type);
+
+  ensureHeaders(meta.sheet);
+  const rows = getData(meta.sheet, 0); // ya mapea {header: valor}
+  return rows.map(r => ({
+    id: String(r[meta.idCol] || ''),
+    name: String(r[meta.valueCol] || '')
+  })).filter(x => x.id || x.name);
+}
+
+/** Crea un nuevo registro auxiliar. */
+function addAuxItem(type, value) {
+  const meta = AUX_TYPE_MAP[type];
+  if (!meta) throw new Error('Tipo auxiliar no reconocido: ' + type);
+
+  const sh = ensureHeaders(meta.sheet);
+  const headers = getHeaders(meta.sheet);
+  const id = Utilities.getUuid();
+
+  // Construye el objeto con las columnas esperadas
+  const record = {};
+  headers.forEach(h => record[h] = '');
+  record[meta.idCol] = id;
+  record[meta.valueCol] = value;
+
+  // Reutiliza tu helper existente
+  saveRecord(meta.sheet, record);
+  return { success: true, id };
+}
+
+/** Actualiza el nombre/valor del registro auxiliar por ID. */
+function updateAuxItem(type, id, newValue) {
+  const meta = AUX_TYPE_MAP[type];
+  if (!meta) throw new Error('Tipo auxiliar no reconocido: ' + type);
+
+  const sh = ensureHeaders(meta.sheet);
+  const lastRow = sh.getLastRow();
+  if (lastRow < 2) throw new Error('No hay registros');
+
+  const headers = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
+  const idColIdx = headers.indexOf(meta.idCol) + 1;    // A1-based
+  const valColIdx = headers.indexOf(meta.valueCol) + 1;
+  if (idColIdx <= 0 || valColIdx <= 0) throw new Error('Columnas no encontradas');
+
+  // Busca fila por ID en la primera columna de ID
+  const dataRange = sh.getRange(2, idColIdx, lastRow - 1, 1);
+  const ids = dataRange.getValues();
+  let rowIndex = -1;
+  for (let i = 0; i < ids.length; i++) {
+    if (String(ids[i][0]) === String(id)) { rowIndex = 2 + i; break; }
+  }
+  if (rowIndex === -1) throw new Error('ID no encontrado');
+
+  sh.getRange(rowIndex, valColIdx).setValue(newValue);
+  return { success: true, id };
+}
+
+/** Elimina un registro auxiliar por ID. */
+function deleteAuxItem(type, id) {
+  const meta = AUX_TYPE_MAP[type];
+  if (!meta) throw new Error('Tipo auxiliar no reconocido: ' + type);
+
+  const sh = ensureHeaders(meta.sheet);
+  const lastRow = sh.getLastRow();
+  if (lastRow < 2) throw new Error('No hay registros');
+
+  const headers = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
+  const idColIdx = headers.indexOf(meta.idCol) + 1;    // A1-based
+  if (idColIdx <= 0) throw new Error('Columna ID no encontrada');
+
+  const dataRange = sh.getRange(2, idColIdx, lastRow - 1, 1);
+  const ids = dataRange.getValues();
+  for (let i = 0; i < ids.length; i++) {
+    if (String(ids[i][0]) === String(id)) {
+      sh.deleteRow(2 + i);
+      return { success: true };
+    }
+  }
+  throw new Error('ID no encontrado');
 }
