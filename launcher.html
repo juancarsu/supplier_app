@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <base target="_top">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --primary-hover: #1d4ed8;
+            --bg-color: #f9fafb;
+            --text-main: #111827;
+            --text-secondary: #6b7280;
+            --surface: #ffffff;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+
+        .container {
+            padding: 24px 20px;
+            width: 100%;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .hero {
+            margin-top: 20px;
+            margin-bottom: 32px;
+        }
+
+        .logo-circle {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 16px;
+            box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.1);
+        }
+
+        .material-icons-round.logo-icon {
+            font-size: 40px;
+            color: var(--primary-color);
+        }
+
+        h1 {
+            font-size: 20px;
+            font-weight: 700;
+            margin: 0 0 8px;
+            color: var(--text-main);
+        }
+
+        p.subtitle {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin: 0;
+            line-height: 1.5;
+        }
+
+        .actions {
+            margin-top: auto;
+            margin-bottom: 20px;
+            width: 100%;
+        }
+
+        .btn-launch {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            background-color: var(--primary-color);
+            color: white;
+            text-decoration: none;
+            padding: 14px 20px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 15px;
+            width: 100%;
+            box-sizing: border-box;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-launch:hover {
+            background-color: var(--primary-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px -1px rgba(37, 99, 235, 0.3);
+        }
+
+        .btn-launch:active {
+            transform: translateY(0);
+        }
+
+        .features {
+            text-align: left;
+            background: var(--surface);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: auto;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+            font-size: 14px;
+            color: #374151;
+        }
+
+        .feature-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .feature-icon {
+            color: var(--primary-color);
+            background: #eff6ff;
+            padding: 6px;
+            border-radius: 8px;
+            font-size: 18px;
+        }
+
+        .footer {
+            font-size: 11px;
+            color: #9ca3af;
+            margin-top: 16px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="hero">
+            <div class="logo-circle">
+                <span class="material-icons-round logo-icon">inventory_2</span>
+            </div>
+            <h1>Gestión de Pedidos</h1>
+            <p class="subtitle">Accede a la plataforma completa para gestionar tus proveedores y órdenes.</p>
+        </div>
+
+        <div class="features">
+            <div class="feature-item">
+                <span class="material-icons-round feature-icon">shopping_cart</span>
+                <span>Gestión de Pedidos</span>
+            </div>
+            <div class="feature-item">
+                <span class="material-icons-round feature-icon">people</span>
+                <span>Base de Proveedores</span>
+            </div>
+            <div class="feature-item">
+                <span class="material-icons-round feature-icon">qr_code_scanner</span>
+                <span>Escáner Rápido</span>
+            </div>
+        </div>
+
+        <div class="actions">
+            <!-- Used the passed variable 'appUrl' -->
+            <a href="<?= appUrl ?>?page=dashboard" target="_blank" class="btn-launch">
+                <span>Abrir Aplicación</span>
+                <span class="material-icons-round">open_in_new</span>
+            </a>
+            <div class="footer">Versión de Producción v2.1</div>
+        </div>
+    </div>
+</body>
+
+</html>

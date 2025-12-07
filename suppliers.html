@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <base target="_top">
+    <?!= include('css'); ?>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Sidebar / Navigation -->
+        <nav class="sidebar">
+            <div class="logo">
+                <span class="material-icons-round">contacts</span>
+                <h1>Agenda</h1>
+            </div>
+            <ul class="nav-links">
+                <li class="active" onclick="switchView('Proveedores')">
+                    <span class="material-icons-round">people</span> Proveedores
+                </li>
+                <li onclick="switchView('Empresas')">
+                    <span class="material-icons-round">business</span> Empresas
+                </li>
+                <li onclick="switchView('Tipos')">
+                    <span class="material-icons-round">category</span> Tipos
+                </li>
+                <!-- Add Back to Dashboard Link -->
+                <li onclick="window.top.location.href='<?= ScriptApp.getService().getUrl() ?>?page=dashboard'">
+                    <span class="material-icons-round">replay</span> Panel Principal
+                </li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="top-bar">
+                <h2 id="page-title">Proveedores</h2>
+                <div class="search-box">
+                    <span class="material-icons-round">search</span>
+                    <input type="text" id="search-input" placeholder="Buscar..." onkeyup="handleSearch()">
+                </div>
+            </header>
+
+            <div id="content-area" class="cards-grid">
+                <!-- Cards will be injected here -->
+                <div class="loading-spinner">
+                    <div class="spinner"></div>
+                </div>
+            </div>
+
+            <button class="fab" onclick="openForm()">
+                <span class="material-icons-round">add</span>
+            </button>
+        </main>
+    </div>
+
+    <!-- Modal Form -->
+    <div id="modal-overlay" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="modal-title">Nuevo Registro</h3>
+                <button class="close-btn" onclick="closeForm()">
+                    <span class="material-icons-round">close</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="main-form" onsubmit="handleFormSubmit(event)">
+                    <!-- Form fields injected dynamically -->
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" onclick="closeForm()">Cancelar</button>
+                <button type="submit" form="main-form" class="btn-primary">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <?!= include('js'); ?>
+</body>
+
+</html>

@@ -1,0 +1,744 @@
+<script>
+    let currentView = 'Proveedores';
+    let globalData = { suppliers: [], companies: [], types: [] };
+    let pendingCompanyRestore = null;
+
+    const PROVINCIAS = {
+        '01': 'Álava', '02': 'Albacete', '03': 'Alicante', '04': 'Almería', '05': 'Ávila',
+        '06': 'Badajoz', '07': 'Illes Balears', '08': 'Barcelona', '09': 'Burgos', '10': 'Cáceres',
+        '11': 'Cádiz', '12': 'Castellón', '13': 'Ciudad Real', '14': 'Córdoba', '15': 'A Coruña',
+        '16': 'Cuenca', '17': 'Girona', '18': 'Granada', '19': 'Guadalajara', '20': 'Gipúzcoa',
+        '21': 'Huelva', '22': 'Huesca', '23': 'Jaén', '24': 'León', '25': 'Lleida',
+        '26': 'La Rioja', '27': 'Lugo', '28': 'Madrid', '29': 'Málaga', '30': 'Murcia',
+        '31': 'Navarra', '32': 'Ourense', '33': 'Asturias', '34': 'Palencia', '35': 'Las Palmas',
+        '36': 'Pontevedra', '37': 'Salamanca', '38': 'Santa Cruz de Tenerife', '39': 'Cantabria', '40': 'Segovia',
+        '41': 'Sevilla', '42': 'Soria', '43': 'Tarragona', '44': 'Teruel', '45': 'Toledo',
+        '46': 'Valencia', '47': 'Valladolid', '48': 'Vizcaya', '49': 'Zamora', '50': 'Zaragoza',
+        '51': 'Ceuta', '52': 'Melilla'
+    };
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+        loadInitialData();
+    });
+
+    // Toast Notification Logic
+    function showToast(title, message, type = 'info') {
+        let container = document.getElementById('toast-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'toast-container';
+            container.className = 'toast-container';
+            document.body.appendChild(container);
+        }
+
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+
+        const iconMap = {
+            success: 'check_circle',
+            error: 'error',
+            info: 'info'
+        };
+
+        toast.innerHTML = `
+            <div class="toast-icon material-icons-round">${iconMap[type]}</div>
+            <div class="toast-content">
+                <div class="toast-title">${title}</div>
+                <div class="toast-message">${message}</div>
+            </div>
+            <div class="toast-close material-icons-round" onclick="this.parentElement.remove()">close</div>
+        `;
+
+        container.appendChild(toast);
+
+        setTimeout(() => {
+            toast.style.animation = 'fadeOut 0.3s forwards';
+            setTimeout(() => toast.remove(), 300);
+        }, 5000);
+    }
+
+    function switchView(view) {
+        currentView = view;
+        document.getElementById('page-title').textContent = view;
+
+        // Update active nav
+        document.querySelectorAll('.nav-links li').forEach(li => {
+            li.classList.remove('active');
+            if (li.textContent.trim().includes(view)) li.classList.add('active');
+        });
+
+        renderCurrentView();
+    }
+
+    function loadInitialData(callback) {
+        const container = document.getElementById('content-area');
+        container.innerHTML = '<div class="loading-spinner"><div class="spinner"></div></div>';
+
+        google.script.run.withSuccessHandler(data => {
+            globalData = data;
+            renderCurrentView();
+            if (callback) callback();
+        }).withFailureHandler(err => {
+            console.error('Failed to load initial data', err);
+            container.innerHTML = '<p style="text-align:center; color:red;">Error al cargar datos: ' + err.message + '</p>';
+            container.innerHTML = '<p style="text-align:center; color:red;">Error al cargar datos: ' + err.message + '</p>';
+            showToast('Error Crítico', 'Error al iniciar la aplicación: ' + err.message, 'error');
+        }).getAllData();
+    }
+
+    function renderCurrentView() {
+        let dataToRender = [];
+        if (currentView === 'Proveedores') {
+            dataToRender = globalData.suppliers;
+        } else if (currentView === 'Empresas') {
+            dataToRender = globalData.companies;
+        } else if (currentView === 'Tipos') {
+            dataToRender = globalData.types;
+        }
+        renderCards(dataToRender);
+    }
+
+
+
+    function renderCards(data) {
+        try {
+            const container = document.getElementById('content-area');
+            container.innerHTML = '';
+
+            if (!data || data.length === 0) {
+                container.innerHTML = '\u003cp style="text-align:center; color:var(--text-secondary); grid-column: 1/-1;"\u003eNo hay registros.\u003c/p\u003e';
+                return;
+            }
+
+            data.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'card';
+
+                // Robust click handling based on View Context, not just data properties
+                card.onclick = () => {
+                    if (currentView === 'Empresas') {
+                        showCompanySuppliers(item);
+                    } else if (currentView === 'Tipos') {
+                        showTypeCompanies(item);
+                    } else {
+                        // Default for 'Proveedores' or fallback
+                        openForm(item);
+                    }
+                };
+
+                let content = '';
+                if (currentView === 'Proveedores') {
+                    content = `
+        <h3>${item.Nombre} ${item.Apellidos}</h3>
+        <p><span class="material-icons-round" style="font-size:16px">business</span> <span>${getCompanyName(item.Empresa)}</span></p>
+        <p><span class="material-icons-round" style="font-size:16px">phone</span> <span>${item['Teléfono']}</span></p>
+        <p><span class="material-icons-round" style="font-size:16px">email</span> <span>${item.Email}</span></p>
+        <span class="status-badge status-${(item.Estado || '').toLowerCase().replace(' ', '-')}">${item.Estado}</span>
+      `;
+                } else if (currentView === 'Empresas') {
+                    content = `
+        <h3>${item['Nombre Empresa']}</h3>
+        <p><span class="material-icons-round" style="font-size:16px">category</span> <span>${getTypeName(item['Tipo Proveedor'])}</span></p>
+        <p><span class="material-icons-round" style="font-size:16px">place</span> <span>${item.Población}</span></p>
+        <p><span class="material-icons-round" style="font-size:16px">phone</span> <span>${item['Teléfono']}</span></p>
+      `;
+                } else {
+                    content = `\u003ch3\u003e${item['Tipo de Proveedor']}\u003c/h3\u003e`;
+                }
+
+                card.innerHTML = content;
+                container.appendChild(card);
+            });
+        } catch (e) {
+            console.error('Error rendering cards:', e);
+            showToast('Error', 'Error al mostrar las tarjetas: ' + e.message, 'error');
+        }
+    }
+
+    function getCompanyName(id) {
+        const company = globalData.companies?.find(c => c.Id_Empresa == id);
+        return company ? company['Nombre Empresa'] : id;
+    }
+
+    function getTypeName(id) {
+        const type = globalData.types?.find(t => t.Id_Tipo == id);
+        return type ? type['Tipo de Proveedor'] : id;
+    }
+
+    function handleSearch() {
+        const query = document.getElementById('search-input').value.toLowerCase();
+
+        let sourceData = [];
+        if (currentView === 'Proveedores') sourceData = globalData.suppliers;
+        else if (currentView === 'Empresas') sourceData = globalData.companies;
+        else if (currentView === 'Tipos') sourceData = globalData.types;
+
+        const filtered = sourceData.filter(item => {
+            return Object.values(item).some(val =>
+                String(val).toLowerCase().includes(query)
+            );
+        });
+        renderCards(filtered);
+    }
+
+    // --- Company-Supplier Association ---
+
+    function showCompanySuppliers(company) {
+        const modal = document.getElementById('modal-overlay');
+        const modalContent = modal.querySelector('.modal');
+        const title = document.getElementById('modal-title');
+        const body = modal.querySelector('.modal-body');
+        const footer = modal.querySelector('.modal-footer');
+
+        title.textContent = company['Nombre Empresa'];
+        body.innerHTML = '<div class="loading-spinner"><div class="spinner"></div></div>';
+
+        // Setup footer with edit button
+        footer.innerHTML = `
+            <button type="button" class="btn-secondary" onclick="closeForm()">Cerrar</button>
+            <button type="button" class="btn-primary" onclick="editCompany()">Editar Empresa</button>
+        `;
+
+        // Store current company for edit function
+        window._currentCompany = company;
+
+        modal.classList.add('active');
+
+        // Load suppliers for this company
+        google.script.run.withSuccessHandler(suppliers => {
+            if (suppliers.length === 0) {
+                body.innerHTML = '<p style="text-align:center; color:var(--text-secondary); padding: 2rem;">Esta empresa no tiene proveedores asociados.</p>';
+            } else {
+                body.innerHTML = '<div class="suppliers-grid"></div>';
+                const grid = body.querySelector('.suppliers-grid');
+
+                suppliers.forEach(supplier => {
+                    const supplierCard = document.createElement('div');
+                    supplierCard.className = 'supplier-mini-card';
+                    supplierCard.onclick = () => openSupplierDetails(supplier);
+
+                    supplierCard.innerHTML = `
+                        <h4>${supplier.Nombre} ${supplier.Apellidos}</h4>
+                        <p><span class="material-icons-round" style="font-size:14px">phone</span> ${supplier['Teléfono']}</p>
+                        <p><span class="material-icons-round" style="font-size:14px">email</span> ${supplier.Email}</p>
+                        <span class="status-badge status-${supplier.Estado.toLowerCase().replace(' ', '-')}">${supplier.Estado}</span>
+                    `;
+
+                    grid.appendChild(supplierCard);
+                });
+            }
+        }).withFailureHandler(err => {
+            body.innerHTML = '<p style="text-align:center; color:red;">Error al cargar proveedores: ' + err.message + '</p>';
+        }).getSuppliersByCompany(company.Id_Empresa);
+    }
+
+    function editCompany() {
+        const modal = document.getElementById('modal-overlay');
+        const footer = modal.querySelector('.modal-footer');
+        const body = modal.querySelector('.modal-body');
+
+        // Restore original footer
+        footer.innerHTML = `
+            <button type="button" class="btn-secondary" onclick="closeForm()">Cancelar</button>
+            <button type="submit" form="main-form" class="btn-primary">Guardar</button>
+        `;
+
+        // Restore body structure (remove supplier grid if present)
+        body.innerHTML = `
+          <form id="main-form" onsubmit="handleFormSubmit(event)">
+            <!-- Form fields injected dynamically -->
+          </form>
+        `;
+
+        // Open form with current company data
+        // Ensure we are in 'Empresas' view context for openForm to work correctly
+        const previousView = currentView;
+        currentView = 'Empresas';
+        openForm(window._currentCompany);
+        currentView = previousView; // Restore view if needed, though usually we want to stay in context
+    }
+
+    function openSupplierDetails(supplier) {
+        const modal = document.getElementById('modal-overlay');
+        const footer = modal.querySelector('.modal-footer');
+        const body = modal.querySelector('.modal-body');
+
+        // Restore original footer
+        footer.innerHTML = `
+            <button type="button" class="btn-secondary" onclick="closeForm()">Cancelar</button>
+            <button type="submit" form="main-form" class="btn-primary">Guardar</button>
+        `;
+
+        // Restore body structure
+        body.innerHTML = `
+          <form id="main-form" onsubmit="handleFormSubmit(event)">
+            <!-- Form fields injected dynamically -->
+          </form>
+        `;
+
+        // Switch to Proveedores view temporarily to render correct form
+        const previousView = currentView;
+        currentView = 'Proveedores';
+        openForm(supplier);
+        // Restore view after closing (handled by closeForm or just keep it)
+        currentView = previousView;
+    }
+
+    // --- Type-Company Association (Client-Side) ---
+
+    function showTypeCompanies(type) {
+        try {
+            const modal = document.getElementById('modal-overlay');
+            const title = document.getElementById('modal-title');
+            const body = modal.querySelector('.modal-body');
+            const footer = modal.querySelector('.modal-footer');
+
+            title.textContent = type['Tipo de Proveedor'];
+
+            // Filter locally using globalData
+            const companies = globalData.companies.filter(c => c['Tipo Proveedor'] == type.Id_Tipo);
+
+            // Setup footer with edit button
+            footer.innerHTML = `
+                <button type="button" class="btn-secondary" onclick="closeForm()">Cerrar</button>
+                <button type="button" class="btn-primary" onclick="editType()">Editar Tipo</button>
+            `;
+
+            // Store current type for edit function
+            window._currentType = type;
+
+            modal.classList.add('active');
+
+            if (companies.length === 0) {
+                body.innerHTML = '<p style="text-align:center; color:var(--text-secondary); padding: 2rem;">No hay empresas asociadas a este tipo.</p>';
+            } else {
+                body.innerHTML = '<div class="suppliers-grid"></div>';
+                const grid = body.querySelector('.suppliers-grid');
+
+                companies.forEach(company => {
+                    const companyCard = document.createElement('div');
+                    companyCard.className = 'supplier-mini-card';
+                    companyCard.onclick = () => openCompanyDetailsFromType(company);
+
+                    companyCard.innerHTML = `
+                        <h4>${company['Nombre Empresa']}</h4>
+                        <p><span class="material-icons-round" style="font-size:14px">place</span> ${company.Población}</p>
+                        <p><span class="material-icons-round" style="font-size:14px">phone</span> ${company['Teléfono']}</p>
+                    `;
+
+                    grid.appendChild(companyCard);
+                });
+            }
+        } catch (e) {
+            console.error('Error in showTypeCompanies:', e);
+            showToast('Error', 'Error al abrir detalles del tipo: ' + e.message, 'error');
+        }
+    }
+
+    function editType() {
+        try {
+            const modal = document.getElementById('modal-overlay');
+            const footer = modal.querySelector('.modal-footer');
+            const body = modal.querySelector('.modal-body');
+
+            // Restore original footer
+            footer.innerHTML = `
+                <button type="button" class="btn-secondary" onclick="closeForm()">Cancelar</button>
+                <button type="submit" form="main-form" class="btn-primary">Guardar</button>
+            `;
+
+            // Restore body structure
+            body.innerHTML = `
+              <form id="main-form" onsubmit="handleFormSubmit(event)">
+                <!-- Form fields injected dynamically -->
+              </form>
+            `;
+
+            // Open form with current type data
+            const previousView = currentView;
+            currentView = 'Tipos';
+            openForm(window._currentType);
+            currentView = previousView;
+        } catch (e) {
+            console.error('Error in editType:', e);
+            showToast('Error', 'Error al abrir edición de tipo: ' + e.message, 'error');
+        }
+    }
+
+    function openCompanyDetailsFromType(company) {
+        try {
+            const modal = document.getElementById('modal-overlay');
+            const footer = modal.querySelector('.modal-footer');
+            const body = modal.querySelector('.modal-body');
+
+            // Restore original footer
+            footer.innerHTML = `
+                <button type="button" class="btn-secondary" onclick="closeForm()">Cancelar</button>
+                <button type="submit" form="main-form" class="btn-primary">Guardar</button>
+            `;
+
+            // Restore body structure
+            body.innerHTML = `
+              <form id="main-form" onsubmit="handleFormSubmit(event)">
+                <!-- Form fields injected dynamically -->
+              </form>
+            `;
+
+            // Switch to Empresas view temporarily
+            const previousView = currentView;
+            currentView = 'Empresas';
+            openForm(company);
+            currentView = previousView;
+        } catch (e) {
+            console.error('Error in openCompanyDetailsFromType:', e);
+            showToast('Error', 'Error al abrir detalles de empresa: ' + e.message, 'error');
+        }
+    }
+
+
+
+
+
+    // --- Form Handling ---
+
+    function openForm(record = null) {
+        try {
+            const modal = document.getElementById('modal-overlay');
+            const form = document.getElementById('main-form');
+            const title = document.getElementById('modal-title');
+
+            if (!modal || !form || !title) {
+                console.error('Critical: Modal elements not found');
+                showToast('Error', 'Error interno: Elementos del formulario no encontrados', 'error');
+                return;
+            }
+
+            const isEdit = record && (record.id || record.Id_Empresa || record.Id_Proveedor || record.Id_Tipo);
+            title.textContent = isEdit ? 'Editar Registro' : 'Nuevo Registro';
+            form.innerHTML = ''; // Clear previous fields
+
+            // Generate fields based on view
+            if (currentView === 'Proveedores') {
+                addInput(form, 'Id_Proveedor', record?.Id_Proveedor, 'hidden');
+                addInput(form, 'Nombre', record?.Nombre);
+                addInput(form, 'Apellidos', record?.Apellidos);
+                addInput(form, 'Teléfono', record?.['Teléfono']);
+
+                // Map companies for select - Safe check
+                const companies = globalData.companies || [];
+                const companyOptions = companies.map(c => ({ id: c.Id_Empresa, name: c['Nombre Empresa'] }));
+                addSelect(form, 'Empresa', companyOptions, record?.Empresa);
+
+                addInput(form, 'Email', record?.Email, 'email', false); // Optional
+                addSelect(form, 'Estado', [{ id: 'Activo', name: 'Activo' }, { id: 'Antiguo', name: 'Antiguo' }, { id: 'En proceso', name: 'En proceso' }], record?.Estado);
+                addTextarea(form, 'Notas', record?.Notas, false); // Notes field
+            } else if (currentView === 'Empresas') {
+                addInput(form, 'Id_Empresa', record?.Id_Empresa, 'hidden');
+
+                addInputWithButton(form, 'Nombre Empresa', record?.['Nombre Empresa'], 'search', function (input) {
+                    if (input.value) {
+                        window.open('https://www.google.com/search?q=CIF+' + encodeURIComponent(input.value), '_blank');
+                    } else {
+                        showToast('Atención', 'Introduce un nombre de empresa primero.', 'info');
+                    }
+                });
+
+                addInput(form, 'CIF', record?.CIF);
+                addInput(form, 'Dirección', record?.Dirección);
+
+                // CP with auto-lookup logic
+                addInput(form, 'CP', record?.CP);
+                const cpInput = form.querySelector('input[name="CP"]');
+
+                addInput(form, 'Población', record?.Población);
+                addInput(form, 'Provincia', record?.Provincia);
+
+                // Add logic to CP
+                cpInput.addEventListener('keyup', function () {
+                    const cp = this.value;
+                    if (cp.length === 5) {
+                        // 1. Auto-fill Province
+                        const provCode = cp.substring(0, 2);
+                        const provName = PROVINCIAS[provCode];
+                        if (provName) {
+                            form.querySelector('input[name="Provincia"]').value = provName;
+                        }
+
+                        // Show loading state
+                        const cityInput = form.querySelector('input[name="Población"]');
+                        const originalPlaceholder = cityInput.placeholder;
+                        cityInput.placeholder = "Buscando...";
+
+                        // 2. Lookup City
+                        google.script.run.withSuccessHandler(cities => {
+                            cityInput.placeholder = originalPlaceholder;
+                            const cityContainer = form.querySelector('input[name="Población"]').parentElement;
+                            const oldInput = form.querySelector('input[name="Población"]') || form.querySelector('select[name="Población"]');
+
+                            if (cities.length === 1) {
+                                // Single match: fill input
+                                if (oldInput.tagName === 'SELECT') {
+                                    // Revert to input if it was a select
+                                    const newInput = document.createElement('input');
+                                    newInput.type = 'text';
+                                    newInput.name = 'Población';
+                                    newInput.required = true;
+                                    newInput.value = cities[0];
+                                    cityContainer.replaceChild(newInput, oldInput);
+                                } else {
+                                    oldInput.value = cities[0];
+                                }
+                            } else if (cities.length > 1) {
+                                // Multiple matches: convert to select
+                                const select = document.createElement('select');
+                                select.name = 'Población';
+                                select.innerHTML = '<option value="">Seleccionar...</option>';
+                                cities.forEach(city => {
+                                    const opt = document.createElement('option');
+                                    opt.value = city;
+                                    opt.textContent = city;
+                                    select.appendChild(opt);
+                                });
+                                cityContainer.replaceChild(select, oldInput);
+                            } else {
+                                // No matches
+                                if (oldInput.tagName === 'SELECT') {
+                                    const newInput = document.createElement('input');
+                                    newInput.type = 'text';
+                                    newInput.name = 'Población';
+                                    newInput.required = true;
+                                    cityContainer.replaceChild(newInput, oldInput);
+                                }
+                            }
+                        }).withFailureHandler(err => {
+                            cityInput.placeholder = originalPlaceholder;
+                            showToast('Error', 'Error al buscar población: ' + err.message, 'error');
+                        }).lookupPostalCode(cp);
+                    }
+                });
+
+                addInput(form, 'Teléfono', record?.['Teléfono']);
+                addInput(form, 'Email', record?.Email, 'email', false); // Optional
+                addTextarea(form, 'Notas', record?.Notas, false); // Notes field
+
+                // Add button to create new type
+                const typeContainer = document.createElement('div');
+                typeContainer.className = 'form-group';
+                typeContainer.style.display = 'flex';
+                typeContainer.style.alignItems = 'flex-end';
+                typeContainer.style.gap = '10px';
+
+                const selectWrapper = document.createElement('div');
+                selectWrapper.style.flex = '1';
+
+                const label = document.createElement('label');
+                label.textContent = 'Tipo Proveedor';
+                const select = document.createElement('select');
+                select.name = 'Tipo Proveedor';
+                select.innerHTML = '<option value="">Seleccionar...</option>';
+
+                globalData.types?.forEach(opt => {
+                    const option = document.createElement('option');
+                    option.value = opt.Id_Tipo;
+                    option.textContent = opt['Tipo de Proveedor'];
+                    if (record?.['Tipo Proveedor'] == opt.Id_Tipo) option.selected = true;
+                    select.appendChild(option);
+                });
+                selectWrapper.appendChild(label);
+                selectWrapper.appendChild(select);
+
+                const addTypeBtn = document.createElement('button');
+                addTypeBtn.type = 'button';
+                addTypeBtn.className = 'btn-secondary';
+                addTypeBtn.innerHTML = '<span class="material-icons-round">add</span>';
+                addTypeBtn.onclick = () => {
+                    const currentFormData = new FormData(form);
+                    pendingCompanyRestore = {};
+                    currentFormData.forEach((value, key) => pendingCompanyRestore[key] = value);
+
+                    closeForm();
+                    switchView('Tipos');
+                    openForm();
+                };
+
+                typeContainer.appendChild(selectWrapper);
+                typeContainer.appendChild(addTypeBtn);
+                form.appendChild(typeContainer);
+
+            } else {
+                addInput(form, 'Id_Tipo', record?.Id_Tipo, 'hidden');
+                addInput(form, 'Tipo de Proveedor', record?.['Tipo de Proveedor']);
+            }
+
+            modal.classList.add('active');
+
+        } catch (e) {
+            console.error('Error in openForm:', e);
+            showToast('Error', 'No se pudo abrir el formulario: ' + e.message, 'error');
+        }
+    }
+
+    function addInput(form, name, value = '', type = 'text', required = true) {
+        if (type === 'hidden') {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = name;
+            input.value = value || '';
+            form.appendChild(input);
+            return;
+        }
+
+        const group = document.createElement('div');
+        group.className = 'form-group';
+
+        const label = document.createElement('label');
+        label.textContent = name;
+        if (!required) label.textContent += ' (Opcional)';
+
+        const input = document.createElement('input');
+        input.type = type;
+        input.name = name;
+        input.value = value || '';
+        if (required) input.required = true;
+
+        group.appendChild(label);
+        group.appendChild(input);
+        form.appendChild(group);
+    }
+
+    function addSelect(form, name, options, selectedValue = '') {
+        const group = document.createElement('div');
+        group.className = 'form-group';
+
+        const label = document.createElement('label');
+        label.textContent = name;
+
+        const select = document.createElement('select');
+        select.name = name;
+        select.innerHTML = '<option value="">Seleccionar...</option>';
+
+        options?.forEach(opt => {
+            const option = document.createElement('option');
+            option.value = opt.id;
+            option.textContent = opt.name;
+            if (selectedValue == opt.id) option.selected = true;
+            select.appendChild(option);
+        });
+
+        group.appendChild(label);
+        group.appendChild(select);
+        form.appendChild(group);
+    }
+
+    function addTextarea(form, name, value = '', required = false) {
+        const group = document.createElement('div');
+        group.className = 'form-group';
+
+        const label = document.createElement('label');
+        label.textContent = name;
+        if (!required) label.textContent += ' (Opcional)';
+
+        const textarea = document.createElement('textarea');
+        textarea.name = name;
+        textarea.value = value || '';
+        if (required) textarea.required = true;
+
+        // Simple styling for textarea
+        textarea.style.width = '100%';
+        textarea.style.padding = '0.625rem';
+        textarea.style.border = '1px solid var(--border-color)';
+        textarea.style.borderRadius = '0.375rem';
+        textarea.style.fontFamily = 'inherit';
+        textarea.style.fontSize = '0.875rem';
+        textarea.style.resize = 'vertical';
+        textarea.style.minHeight = '80px';
+
+        textarea.addEventListener('focus', () => {
+            textarea.style.borderColor = 'var(--primary-color)';
+            textarea.style.outline = 'none';
+            textarea.style.boxShadow = '0 0 0 2px rgba(37, 99, 235, 0.1)';
+        });
+        textarea.addEventListener('blur', () => {
+            textarea.style.borderColor = 'var(--border-color)';
+            textarea.style.boxShadow = 'none';
+        });
+
+        group.appendChild(label);
+        group.appendChild(textarea);
+        form.appendChild(group);
+    }
+
+    function addInputWithButton(form, name, value, buttonIcon, buttonAction) {
+        const group = document.createElement('div');
+        group.className = 'form-group';
+
+        const label = document.createElement('label');
+        label.textContent = name;
+
+        const container = document.createElement('div');
+        container.style.display = 'flex';
+        container.style.gap = '10px';
+
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.name = name;
+        input.value = value || '';
+        input.required = true;
+        input.style.flex = '1';
+
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'btn-secondary';
+        button.innerHTML = '<span class="material-icons-round">' + buttonIcon + '</span>';
+        button.onclick = function () { buttonAction(input); };
+
+        container.appendChild(input);
+        container.appendChild(button);
+
+        group.appendChild(label);
+        group.appendChild(container);
+        form.appendChild(group);
+    }
+
+    function closeForm() {
+        document.getElementById('modal-overlay').classList.remove('active');
+    }
+
+    function handleFormSubmit(e) {
+        e.preventDefault();
+        const form = e.target;
+        const formData = new FormData(form);
+        const obj = {};
+        formData.forEach((value, key) => obj[key] = value);
+
+        const btn = document.querySelector('button[form="main-form"]');
+        const originalText = btn.textContent;
+        btn.textContent = 'Guardando...';
+        btn.disabled = true;
+
+        google.script.run.withSuccessHandler(res => {
+            closeForm();
+            showToast('Éxito', 'Registro guardado correctamente', 'success');
+
+            if (currentView === 'Tipos' && pendingCompanyRestore) {
+                const newTypeId = res.id;
+                pendingCompanyRestore['Tipo Proveedor'] = newTypeId;
+                switchView('Empresas');
+                loadInitialData(() => {
+                    openForm(pendingCompanyRestore);
+                    pendingCompanyRestore = null;
+                });
+            } else {
+                loadInitialData();
+            }
+
+            btn.textContent = originalText;
+            btn.disabled = false;
+        }).withFailureHandler(err => {
+            showToast('Error', 'Error al guardar: ' + err.message, 'error');
+            btn.textContent = originalText;
+            btn.disabled = false;
+        }).saveRecord(currentView, obj);
+    }
+</script>

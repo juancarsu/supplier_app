@@ -1,0 +1,973 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <base target="_top">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --bg-color: #f3f4f6;
+            --card-bg: #ffffff;
+            --text-main: #1f2937;
+            --border-color: #e5e7eb;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-color);
+            color: var(--text-main);
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            margin-top: 0;
+            border-bottom: 2px solid var(--bg-color);
+            padding-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .back-btn {
+            text-decoration: none;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            font-size: 0.9rem;
+            margin-bottom: 20px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .full-width {
+            grid-column: 1 / -1;
+        }
+
+        .span-2 {
+            grid-column: span 2;
+        }
+
+        @media (max-width: 600px) {
+            .span-2 {
+                grid-column: 1 / -1;
+            }
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        label {
+            font-weight: 500;
+            font-size: 0.9rem;
+            color: #374151;
+        }
+
+        input,
+        select,
+        textarea {
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-family: inherit;
+            font-size: 0.95rem;
+            width: 100%;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            outline: 2px solid var(--primary-color);
+            border-color: transparent;
+        }
+
+        .link-input-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .link-input-group input {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .checkbox-group {
+            flex-direction: row;
+            align-items: center;
+            gap: 10px;
+            height: 100%;
+            padding-top: 24px;
+        }
+
+        .checkbox-group input {
+            width: 20px;
+            height: 20px;
+            margin: 0;
+        }
+
+        .checkbox-group label {
+            margin: 0;
+            cursor: pointer;
+        }
+
+        button.submit-btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 20px;
+            width: 100%;
+            transition: background-color 0.2s;
+        }
+
+        button.submit-btn:hover {
+            background-color: #1d4ed8;
+        }
+
+        #loading {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* File Upload Styles */
+        .drop-zone {
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: #fafafa;
+        }
+
+        .drop-zone:hover,
+        .drop-zone.dragover {
+            border-color: #2563eb;
+            background: #eff6ff;
+        }
+
+        .drop-zone p {
+            margin: 0;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .drop-zone .sub-text {
+            font-size: 0.8em;
+            color: #999;
+            margin-top: 5px;
+        }
+
+        .file-list {
+            margin-top: 15px;
+        }
+
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f3f4f6;
+            padding: 8px 12px;
+            border-radius: 6px;
+            margin-bottom: 5px;
+            font-size: 0.9em;
+        }
+
+        .file-item a {
+            color: #2563eb;
+            text-decoration: none;
+            font-weight: 500;
+            word-break: break-all;
+        }
+
+        .remove-file {
+            color: #ef4444;
+            cursor: pointer;
+            margin-left: 10px;
+            font-weight: bold;
+        }
+
+        /* Toast Notifications */
+        .toast-container {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            pointer-events: none;
+        }
+
+        .toast {
+            background: white;
+            border-radius: 8px;
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            min-width: 300px;
+            max-width: 400px;
+            animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            pointer-events: auto;
+            border-left: 4px solid transparent;
+        }
+
+        .toast.success {
+            border-left-color: #10b981;
+        }
+
+        .toast.error {
+            border-left-color: #ef4444;
+        }
+
+        .toast.info {
+            border-left-color: #3b82f6;
+        }
+
+        .toast-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .toast.success .toast-icon {
+            color: #10b981;
+        }
+
+        .toast.error .toast-icon {
+            color: #ef4444;
+        }
+
+        .toast.info .toast-icon {
+            color: #3b82f6;
+        }
+
+        .toast-content {
+            flex: 1;
+        }
+
+        .toast-title {
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: #1f2937;
+            margin-bottom: 2px;
+        }
+
+        .toast-message {
+            font-size: 0.875rem;
+            color: #6b7280;
+        }
+
+        .toast-close {
+            color: #9ca3af;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+
+        .toast-close:hover {
+            background-color: #f3f4f6;
+            color: #4b5563;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeOut {
+            to {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="loading">
+        <div class="spinner"></div>
+    </div>
+
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <a href="<?= ScriptApp.getService().getUrl() ?>?page=orders_list" class="back-btn" style="margin-bottom: 0;">
+            <span class="material-icons">arrow_back</span> Volver al Listado
+        </a>
+    </div>
+
+    <div class="container">
+        <h1><span class="material-icons">shopping_cart</span> <span id="page-title">Nuevo Pedido</span></h1>
+
+        <form id="orderForm" onsubmit="handleSubmit(event)">
+            <div class="form-grid">
+                <input type="hidden" name="Id_Pedido" id="Id_Pedido">
+
+                <div class="form-group">
+                    <label>Proveedor</label>
+                    <select name="Proveedor" id="Proveedor" required>
+                        <option value="">Cargando...</option>
+                    </select>
+                </div>
+
+                <div class="form-group full-width">
+                    <label>Descripción del Pedido</label>
+                    <input type="text" name="Descripción" id="Descripción" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Fecha del Pedido</label>
+                    <input type="date" name="Fecha Pedido" id="Fecha_Pedido" required>
+                </div>
+                <div class="form-group">
+                    <label>Fecha Estimada</label>
+                    <input type="date" name="Fecha Estimada" id="Fecha_Estimada">
+                </div>
+                <div class="form-group">
+                    <label>Fecha de Llegada</label>
+                    <input type="date" name="Fecha Llegada" id="Fecha_Llegada">
+                </div>
+
+                <div class="form-group">
+                    <label>Comprador</label>
+                    <select name="Comprador" id="Comprador">
+                        <option value="">Cargando...</option>
+                    </select>
+                </div>
+
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" name="Servido" id="Servido">
+                    <label for="Servido">Servido</label>
+                </div>
+
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" name="Autorizado" id="Autorizado">
+                    <label for="Autorizado">Autorizado</label>
+                </div>
+
+                <div class="form-group span-2">
+                    <label>GDC/PINV</label>
+                    <div class="link-input-group">
+                        <input type="text" name="GDC_PINV" id="GDC_PINV" placeholder="Texto">
+                        <input type="text" name="Enlace_GDC_PINV" id="Enlace_GDC_PINV" placeholder="URL">
+                        <span class="material-icons" title="Enlace">link</span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Medio del Pedido</label>
+                    <select name="Medio Pedido" id="Medio_Pedido">
+                        <option value="">Cargando...</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Zona</label>
+                    <select name="Zona" id="Zona">
+                        <option value="">Cargando...</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Edificio</label>
+                    <select name="Edificio" id="Edificio">
+                        <option value="">Cargando...</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Solicitante</label>
+                    <select name="Solicitante" id="Solicitante">
+                        <option value="">Cargando...</option>
+                    </select>
+                </div>
+
+                <div class="form-group span-2">
+                    <label>SC</label>
+                    <div class="link-input-group">
+                        <input type="text" name="SC" id="SC" placeholder="Texto">
+                        <input type="text" name="Enlace_SC" id="Enlace_SC" placeholder="URL">
+                    </div>
+                </div>
+                <div class="form-group span-2">
+                    <label>OC</label>
+                    <div class="link-input-group">
+                        <input type="text" name="OC" id="OC" placeholder="Texto">
+                        <input type="text" name="Enlace_OC" id="Enlace_OC" placeholder="URL">
+                    </div>
+                </div>
+                <div class="form-group span-2">
+                    <label>Albarán</label>
+                    <div class="link-input-group">
+                        <input type="text" name="Albarán" id="Albarán" placeholder="Texto">
+                        <input type="text" name="Enlace_Albarán" id="Enlace_Albarán" placeholder="URL">
+                    </div>
+                </div>
+                <div class="form-group span-2">
+                    <label>Factura</label>
+                    <div class="link-input-group">
+                        <input type="text" name="Factura" id="Factura" placeholder="Texto">
+                        <input type="text" name="Enlace_Factura" id="Enlace_Factura" placeholder="URL">
+                    </div>
+                </div>
+                <div class="form-group span-2">
+                    <label>Presupuesto</label>
+                    <div class="link-input-group">
+                        <input type="text" name="Presupuesto" id="Presupuesto" placeholder="Texto">
+                        <input type="text" name="Enlace_Presupuesto" id="Enlace_Presupuesto" placeholder="URL">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Importe (s/IVA)</label>
+                    <input type="text" name="Importe" id="Importe" placeholder="Ej: 120,50 €">
+                </div>
+
+                <div class="form-group span-2">
+                    <label>Adjuntos</label>
+                    <div id="drop-zone" class="drop-zone">
+                        <p>Arrastra archivos aquí o haz clic para subir</p>
+                        <p class="sub-text">(Imágenes, PDF, Word)</p>
+                        <input type="file" id="file-input" multiple style="display: none;"
+                            accept=".pdf,.doc,.docx,.jpg,.jpeg,.png">
+                    </div>
+                    <div id="file-list" class="file-list"></div>
+                    <input type="hidden" name="Adjuntos" id="Adjuntos">
+                </div>
+
+                <div class="form-group full-width">
+                    <label>Notas</label>
+                    <textarea name="Notas" id="Notas" rows="3"></textarea>
+                </div>
+            </div>
+
+            <button type="submit" class="submit-btn" id="submitBtn">Guardar Pedido</button>
+        </form>
+    </div>
+
+    <script>
+        let isEditMode = false;
+        let uploadedFiles = [];
+        let appState = {
+            dropdownsLoaded: false,
+            orderData: null
+        };
+
+        // Global variable injected from server
+        var SERVER_ORDER_ID = "<?= (typeof data !== 'undefined' && data && data.id) ? data.id : '' ?>";
+        var SERVER_URL = "<?= ScriptApp.getService().getUrl() ?>";
+
+        function getAppUrl() {
+            let url = SERVER_URL;
+            try {
+                const referrer = document.referrer;
+                if (referrer && referrer.includes('/dev')) {
+                    return url.replace('/exec', '/dev');
+                }
+            } catch (e) { console.log('Cannot access referrer', e); }
+            return url;
+        }
+
+        var APP_URL = getAppUrl();
+
+        function init() {
+            APP_URL = getAppUrl();
+            console.log('🚀 Init function called');
+            console.log('📍 Current URL:', window.location.href);
+            console.log('📍 APP_URL:', APP_URL);
+
+            // START PARALLEL LOADING
+            loadDropdowns();
+            checkUrlForId();
+
+            // Render empty file list
+            renderFiles();
+            updateHiddenInput();
+        }
+
+        function loadDropdowns() {
+            console.log('📥 Loading dropdowns...');
+            google.script.run
+                .withSuccessHandler((data) => {
+                    console.log('✅ Dropdowns loaded successfully', data);
+                    populateDropdowns(data);
+                    appState.dropdownsLoaded = true;
+
+                    // If order data arrived first and we have values, ensure they are selected correctly
+                    // (populateDropdowns might have reset selections, so we re-apply if needed)
+                    if (appState.orderData) {
+                        console.log('🔄 Re-applying order data after dropdowns loaded');
+                        fillForm(appState.orderData);
+                    }
+                })
+                .withFailureHandler((err) => {
+                    console.error('❌ Error loading dropdowns:', err);
+                    showToast('Error', 'Error al cargar los datos del formulario: ' + err.message, 'error');
+                })
+                .getDropdownData();
+        }
+
+        function populateDropdowns(data) {
+            console.log('🔄 Populating dropdowns');
+            // Helper to preserve value if already set (by optimistic fill)
+            const fill = (id, items) => {
+                const select = document.getElementById(id);
+                if (!select) return;
+
+                const currentValue = select.value;
+
+                select.innerHTML = '<option value="">Seleccionar...</option>';
+                items.forEach(item => {
+                    const option = document.createElement('option');
+                    option.value = item.name;
+                    option.textContent = item.name;
+                    select.appendChild(option);
+                });
+
+                // Restore value if it matches one of the new options
+                if (currentValue) {
+                    select.value = currentValue;
+                }
+            };
+
+            fill('Proveedor', data.empresas);
+            fill('Comprador', data.compradores);
+            fill('Medio_Pedido', data.medios);
+            fill('Zona', data.zonas);
+            fill('Edificio', data.edificios);
+            fill('Solicitante', data.solicitantes);
+        }
+
+        function checkUrlForId() {
+            console.log('🔍 Checking URL for ID parameter...');
+
+            // Use the global variable directly
+            const id = SERVER_ORDER_ID;
+
+            console.log('🎯 ID from URL:', id);
+
+            if (id && id !== 'null' && id !== null) {
+                isEditMode = true;
+                document.getElementById('page-title').textContent = 'Modificar Pedido';
+                document.getElementById('submitBtn').textContent = 'Actualizar Pedido';
+                console.log('📝 Switched to EDIT mode, loading order:', id);
+                // Call immediately, don't wait for dropdowns
+                loadOrderData(id);
+            } else {
+                console.log('➕ No ID found, staying in CREATE mode');
+            }
+        }
+
+        function loadOrderData(id) {
+            console.log('📦 Loading order data for ID:', id);
+            document.getElementById('loading').style.display = 'flex';
+
+            google.script.run
+                .withSuccessHandler((order) => {
+                    console.log('📬 Order data received:', order);
+                    document.getElementById('loading').style.display = 'none';
+                    if (order) {
+                        appState.orderData = order;
+                        fillForm(order);
+                    } else {
+                        console.error('❌ Order is null');
+                        showToast('Error', 'Pedido no encontrado. ID: ' + id, 'error');
+                    }
+                })
+                .withFailureHandler((err) => {
+                    document.getElementById('loading').style.display = 'none';
+                    console.error('❌ Error loading order:', err);
+                    showToast('Error', 'Error al cargar el pedido: ' + err.message, 'error');
+                })
+                .getOrderById(id);
+        }
+
+        function fillForm(order) {
+            console.log('📝 Filling form with order data:', order);
+
+            for (const key in order) {
+                let elementId = key;
+                let element = document.getElementById(elementId);
+
+                if (!element) {
+                    elementId = key.replace(/ /g, '_');
+                    element = document.getElementById(elementId);
+                }
+
+                if (element) {
+                    const value = order[key];
+
+                    if (element.tagName === 'SELECT') {
+                        // OPTIMISTIC FILL: If dropdowns aren't loaded or value is missing, add it temporarily
+                        if (value) {
+                            // Check if option exists
+                            let optionExists = false;
+                            for (let i = 0; i < element.options.length; i++) {
+                                if (element.options[i].value == value) {
+                                    optionExists = true;
+                                    break;
+                                }
+                            }
+
+                            if (!optionExists) {
+                                console.log(`⚠️ Option '${value}' not found in ${elementId}, adding temporary option`);
+                                const option = document.createElement('option');
+                                option.value = value;
+                                option.textContent = value;
+                                element.appendChild(option);
+                            }
+                            element.value = value;
+                        }
+                    } else if (element.type === 'date' && value) {
+                        const d = new Date(value);
+                        if (!isNaN(d.getTime())) {
+                            const year = d.getFullYear();
+                            const month = String(d.getMonth() + 1).padStart(2, '0');
+                            const day = String(d.getDate()).padStart(2, '0');
+                            element.value = `${year}-${month}-${day}`;
+                        }
+                    } else if (element.name === 'Adjuntos' && value) {
+                        try {
+                            const files = JSON.parse(value);
+                            uploadedFiles = Array.isArray(files) ? files : [];
+                            renderFiles();
+                            element.value = value;
+                        } catch (e) { console.error('Error parsing attachments', e); }
+                    } else if (element.type === 'checkbox') {
+                        const normalize = (val) => String(val).toLowerCase().trim();
+                        const val = normalize(value);
+                        element.checked = (val === 'sí' || val === 'si' || val === 'true' || val === 'yes');
+                    } else {
+                        element.value = value || '';
+                    }
+                }
+            }
+            console.log('✅ Form filling complete');
+        }
+
+        // Toast Logic
+        function showToast(title, message, type = 'info') {
+            let container = document.getElementById('toast-container');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'toast-container';
+                container.className = 'toast-container';
+                document.body.appendChild(container); // Append to body
+            }
+
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+
+            const iconMap = {
+                success: 'check_circle',
+                error: 'error',
+                info: 'info'
+            };
+
+            toast.innerHTML = `
+                <div class="toast-icon material-icons">${iconMap[type]}</div>
+                <div class="toast-content">
+                    <div class="toast-title">${title}</div>
+                    <div class="toast-message">${message}</div>
+                </div>
+                <div class="toast-close material-icons" onclick="this.parentElement.remove()">close</div>
+            `;
+
+            container.appendChild(toast);
+
+            // Auto dismiss
+            setTimeout(() => {
+                toast.style.animation = 'fadeOut 0.3s forwards';
+                setTimeout(() => toast.remove(), 300);
+            }, 5000);
+        }
+
+        function handleSubmit(e) {
+            e.preventDefault();
+            console.log('💾 Form submitted');
+
+            const submitBtn = document.getElementById('submitBtn');
+            const originalBtnText = submitBtn.textContent;
+            submitBtn.textContent = 'Guardando...';
+            submitBtn.disabled = true;
+
+            const form = document.getElementById('orderForm');
+            const formData = new FormData(form);
+            const formObject = {};
+            formData.forEach((value, key) => {
+                formObject[key] = value;
+            });
+
+            formObject['Servido'] = document.getElementById('Servido').checked ? 'SI' : 'NO';
+            formObject['Autorizado'] = document.getElementById('Autorizado').checked ? 'SI' : 'NO';
+
+            // Fix regional format for Amount: replace dot with comma
+            if (formObject['Importe']) {
+                formObject['Importe'] = formObject['Importe'].toString().replace('.', ',');
+            }
+
+            console.log('📤 Submitting:', formObject);
+
+            google.script.run
+                .withSuccessHandler((result) => {
+                    console.log('✅ Save successful! Result:', result);
+
+                    // Mostrar mensaje de éxito
+                    showToast(
+                        'Éxito',
+                        isEditMode ? 'Pedido actualizado. Redirigiendo...' : 'Pedido guardado. Redirigiendo...',
+                        'success'
+                    );
+
+                    // SOLUCIÓN: Forzar apertura en ventana principal (_top)
+                    setTimeout(() => {
+                        try {
+                            // Obtener la URL base limpia desde SERVER_URL
+                            let baseUrl = SERVER_URL;
+
+                            // Remover cualquier parámetro query existente
+                            if (baseUrl.includes('?')) {
+                                baseUrl = baseUrl.split('?')[0];
+                            }
+
+                            // Remover /dev si existe
+                            baseUrl = baseUrl.replace('/dev', '');
+
+                            // Construir URL limpia
+                            const redirectUrl = baseUrl + '?page=orders_list';
+
+                            console.log('🔗 Redirecting to:', redirectUrl);
+
+                            // MÉTODO 1: Intentar asignar directamente a top (puede fallar por seguridad)
+                            try {
+                                if (window.top && window.top.location) {
+                                    window.top.location.href = redirectUrl;
+                                    return;
+                                }
+                            } catch (e) {
+                                console.log('⚠️ Cannot access window.top, using alternative method');
+                            }
+
+                            // MÉTODO 2: Si estamos en un iframe, abrir en nueva pestaña y cerrar la actual
+                            if (window.self !== window.top) {
+                                console.log('📱 Detected iframe, opening in new window');
+                                window.open(redirectUrl, '_blank');
+
+                                // Mostrar mensaje al usuario
+                                submitBtn.textContent = '✓ Guardado - Ver Listado';
+                                submitBtn.disabled = false;
+                                submitBtn.onclick = () => {
+                                    window.open(redirectUrl, '_blank');
+                                };
+
+                                // Intentar cerrar el iframe (puede no funcionar)
+                                setTimeout(() => {
+                                    try {
+                                        window.close();
+                                    } catch (e) {
+                                        console.log('Cannot close window automatically');
+                                    }
+                                }, 500);
+                            } else {
+                                // MÉTODO 3: Si no estamos en iframe, redirección normal
+                                window.location.href = redirectUrl;
+                            }
+
+                        } catch (err) {
+                            console.error('❌ Redirect error:', err);
+                            // Fallback: mostrar botón manual
+                            submitBtn.textContent = 'Ver Listado de Pedidos';
+                            submitBtn.disabled = false;
+                            submitBtn.onclick = () => {
+                                const fallbackUrl = SERVER_URL.split('?')[0].replace('/dev', '') + '?page=orders_list';
+                                window.open(fallbackUrl, '_blank');
+                            };
+                        }
+                    }, 1200);
+                })
+                .withFailureHandler((err) => {
+                    submitBtn.textContent = originalBtnText;
+                    submitBtn.disabled = false;
+                    console.error('❌ Error saving:', err);
+                    showToast('Error', 'Error al guardar el pedido: ' + err.message, 'error');
+                })
+                .saveRecord('Pedidos', formObject);
+        }
+
+        window.onload = init;
+        // uploadedFiles is declared at top of script
+
+        // Drag and Drop Logic
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file-input');
+
+        dropZone.addEventListener('click', () => fileInput.click());
+
+        fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
+
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, highlight, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, unhighlight, false);
+        });
+
+        function highlight(e) {
+            dropZone.classList.add('dragover');
+        }
+
+        function unhighlight(e) {
+            dropZone.classList.remove('dragover');
+        }
+
+        dropZone.addEventListener('drop', handleDrop, false);
+
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            handleFiles(files);
+        }
+
+        function handleFiles(files) {
+            ([...files]).forEach(uploadFile);
+        }
+
+        function uploadFile(file) {
+            // Validate type
+            const validTypes = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+            if (!validTypes.includes(file.type) && !file.name.match(/\.(jpg|jpeg|png|pdf|doc|docx)$/i)) {
+                showToast('Archivo no permitido', 'Tipo de archivo no permitido: ' + file.name, 'error');
+                return;
+            }
+
+            // Show loading state
+            const originalText = dropZone.querySelector('p').textContent;
+            dropZone.querySelector('p').textContent = `Subiendo ${file.name}...`;
+
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onloadend = function () {
+                const base64Data = reader.result.split(',')[1]; // Get raw base64
+
+                google.script.run
+                    .withSuccessHandler(result => {
+                        if (result.success) {
+                            uploadedFiles.push({
+                                name: result.name,
+                                url: result.url,
+                                id: result.id
+                            });
+                            renderFiles();
+                            updateHiddenInput();
+                            dropZone.querySelector('p').textContent = originalText;
+                            showToast('Éxito', 'Archivo subido: ' + result.name, 'success');
+                        }
+                    })
+                    .withFailureHandler(err => {
+                        showToast('Error', 'Error al subir: ' + err.message, 'error');
+                        dropZone.querySelector('p').textContent = originalText;
+                    })
+                    .uploadFileToDrive(base64Data, file.name, file.type);
+            }
+        }
+
+        function renderFiles() {
+            const list = document.getElementById('file-list');
+            list.innerHTML = '';
+            uploadedFiles.forEach((file, index) => {
+                const item = document.createElement('div');
+                item.className = 'file-item';
+                item.innerHTML = `
+                    <a href="${file.url}" target="_blank">${file.name}</a>
+                    <span class="remove-file" onclick="removeFile(${index})">×</span>
+                `;
+                list.appendChild(item);
+            });
+        }
+
+        function removeFile(index) {
+            if (!confirm('¿Quitar este archivo de la lista? (No se borrará de Drive)')) return;
+            uploadedFiles.splice(index, 1);
+            renderFiles();
+            updateHiddenInput();
+        }
+
+        function updateHiddenInput() {
+            document.getElementById('Adjuntos').value = JSON.stringify(uploadedFiles);
+        }
+    </script>
+</body>
+
+</html>

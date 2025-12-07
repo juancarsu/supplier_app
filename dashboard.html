@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <base target="_top">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <style>
+    :root {
+      --primary-color: #2563eb;
+      --primary-hover: #1d4ed8;
+      --bg-color: #f3f4f6;
+      --card-bg: #ffffff;
+      --text-main: #1f2937;
+      --text-secondary: #6b7280;
+      --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-color);
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      color: var(--text-main);
+    }
+
+    .container {
+      max-width: 900px;
+      width: 100%;
+      padding: 2rem;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 3rem;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-bottom: 0.5rem;
+    }
+
+    p.subtitle {
+      color: var(--text-secondary);
+      font-size: 1.1rem;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 2rem;
+    }
+
+    .card {
+      background-color: var(--card-bg);
+      border-radius: 1rem;
+      padding: 2rem;
+      box-shadow: var(--shadow);
+      transition: transform 0.2s, box-shadow 0.2s;
+      text-decoration: none;
+      color: inherit;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      cursor: pointer;
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+
+    .icon-wrapper {
+      background-color: #eff6ff;
+      color: var(--primary-color);
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .material-icons {
+      font-size: 32px;
+    }
+
+    .card h2 {
+      margin: 0 0 0.5rem 0;
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+
+    .card p {
+      margin: 0;
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <header>
+      <h1>Panel de Control</h1>
+      <p class="subtitle">Sistema de Gestión de Proveedores y Pedidos</p>
+    </header>
+
+    <div class="grid">
+      <a href="<?= ScriptApp.getService().getUrl() ?>?page=suppliers" class="card">
+        <div class="icon-wrapper">
+          <span class="material-icons">people</span>
+        </div>
+        <h2>Proveedores</h2>
+        <p>Gestionar proveedores y empresas asociadas.</p>
+      </a>
+
+      <!-- LINK UPDATED TO orders_list -->
+      <a href="<?= ScriptApp.getService().getUrl() ?>?page=orders_list" class="card">
+        <div class="icon-wrapper">
+          <span class="material-icons">shopping_cart</span>
+        </div>
+        <h2>Pedidos</h2>
+        <p>Ver listado de pedidos, buscar y editar.</p>
+      </a>
+
+      <a href="<?= ScriptApp.getService().getUrl() ?>?page=auxiliary" class="card">
+        <div class="icon-wrapper">
+          <span class="material-icons">settings</span>
+        </div>
+        <h2>Configuración</h2>
+        <p>Administrar compradores, zonas, edificios y otros datos auxiliares.</p>
+      </a>
+    </div>
+  </div>
+</body>
+
+</html>

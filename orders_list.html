@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <base target="_top">
+    <?!= include('css'); ?>
+    <!-- Fuentes correctamente enlazadas -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+
+    <style>
+        /* ===== Tabla ===== */
+        .orders-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: var(--card-shadow);
+            min-width: 1200px;
+            /* asegura ancho mínimo cuando hay muchas columnas */
+        }
+
+        .orders-table th,
+        .orders-table td {
+            padding: 10px 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+            white-space: nowrap;
+            font-size: 0.92rem;
+        }
+
+        .orders-table th {
+            background-color: #f9fafb;
+            font-weight: 600;
+            color: var(--text-secondary);
+            font-size: 0.82rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .orders-table tr:hover {
+            background-color: #f9fafb;
+        }
+
+        .row-link {
+            color: inherit;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .row-link:hover {
+            color: var(--primary-color);
+        }
+
+        .checkbox-cell {
+            text-align: center;
+        }
+
+        .checkbox-cell input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: var(--primary-color);
+        }
+
+        /* ===== Chips de documentos ===== */
+        .doc-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 8px;
+            border-radius: 999px;
+            background: #eef2ff;
+            color: #1f2937;
+            text-decoration: none;
+            border: 1px solid #c7d2fe;
+            font-size: 0.85rem;
+        }
+
+        .doc-chip:hover {
+            background: #e0e7ff;
+        }
+
+        .doc-chip .material-icons-round {
+            font-size: 16px;
+            color: #2563eb;
+            vertical-align: middle;
+        }
+
+        /* ===== Selección de fila (teclado) ===== */
+        tr.order-row.selected {
+            background: #e5f4ff;
+        }
+
+        /* ===== Barra de filtros con GRID (2 filas) ===== */
+        .filter-bar {
+            display: grid;
+            grid-template-rows: auto auto;
+            gap: 10px;
+            padding: 10px 2rem;
+            background: white;
+            border-bottom: 1px solid var(--border-color);
+            align-items: center;
+        }
+
+        .filter-row1 {
+            display: grid;
+            grid-template-columns: 500px 1fr;
+            column-gap: 10px;
+            align-items: center;
+        }
+
+        .search-box {
+            position: relative;
+            display: flex;
+            align-items: center;
+            width: 500px;
+            max-width: 100%;
+        }
+
+        .search-box span {
+            position: absolute;
+            left: 10px;
+            color: var(--text-secondary);
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 8px 12px 8px 36px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 0.9rem;
+            outline: none;
+        }
+
+        .search-box input:focus {
+            border-color: var(--primary-color);
+        }
+
+        .btn-clear,
+        .btn-export {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background: #fff;
+            color: var(--text-primary);
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .btn-clear:hover,
+        .btn-export:hover {
+            background: #f3f4f6;
+        }
+
+        .export-actions {
+            display: inline-flex;
+            gap: 8px;
+            justify-content: flex-end;
+            align-items: center;
+            justify-self: end;
+        }
+
+        .export-select {
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background: #fff;
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            outline: none;
+        }
+
+        .filters-row2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 10px;
+            align-items: center;
+        }
+
+        .filter-select {
+            width: 100%;
+            min-width: 160px;
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 0.9rem;
+            outline: none;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            overflow: hidden;
+        }
+
+        @media (max-width: 720px) {
+            .filter-row1 {
+                grid-template-columns: 1fr;
+            }
+
+            .search-box {
+                width: 100%;
+            }
+
+            .export-actions {
+                justify-self: end;
+                flex-wrap: wrap;
+                gap: 6px;
+            }
+        }
+
+        /* ===== Paginación ===== */
+        .pagination-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 2rem;
+            background: white;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .pagination-info {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .pagination-controls {
+            display: flex;
+            gap: 5px;
+        }
+
+        .page-btn {
+            padding: 6px 12px;
+            border: 1px solid var(--border-color);
+            background: white;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            color: var(--text-primary);
+        }
+
+        .page-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .page-btn:hover:not(:disabled) {
+            background-color: #f3f4f6;
+        }
+
+        /* ===== Área contenido con scroll horizontal ===== */
+        #content-area {
+            padding: 2rem;
+            overflow-y: auto;
+            overflow-x: auto;
+            /* horizontal */
+            height: calc(100vh - 240px);
+            padding-bottom: 120px;
+            /* deja hueco para la FAB y no interfiera */
+        }
+
+        /* ===== FAB: Nuevo pedido (no interferir con Siguiente) ===== */
+        .fab {
+            position: fixed;
+            bottom: 96px;
+            /* más arriba que la barra de paginación */
+            right: 24px;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: var(--primary-color, #2563eb);
+            color: #fff;
+            border: none;
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 1000;
+        }
+
+        .fab:hover {
+            opacity: .95;
+        }
+
+        .fab .material-icons-round {
+            font-size: 28px;
+        }
+
+        /* ===== Overlay de estado (Exportando…) ===== */
+        .busy-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, .35);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .busy-overlay.active {
+            display: flex;
+        }
+
+        .busy-card {
+            background: #fff;
+            border-radius: 10px;
+            padding: 18px 20px;
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 240px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, .2);
+        }
+
+        .busy-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #2563eb;
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* ===== Toast (aviso corto) ===== */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #111827;
+            color: #fff;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            box-shadow: 0 6px 18px rgba(0, 0, 0, .25);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity .25s ease;
+            z-index: 2500;
+        }
+
+        .toast.show {
+            opacity: 1;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-container">
+        <nav class="sidebar">
+            <div class="logo">
+                <span class="material-icons-round">receipt_long</span>
+                <h1>Pedidos</h1>
+            </div>
+            <ul class="nav-links">
+                <li class="active"><span class="material-icons-round">list</span> Listado de Pedidos</li>
+                <li onclick="window.top.location.href='<?= appUrl ?>?page=authorizations'"><span
+                        class="material-icons-round">assignment_turned_in</span> Autorizaciones</li>
+                <li onclick="window.top.location.href='<?= appUrl ?>?page=suppliers'"><span
+                        class="material-icons-round">people</span> Proveedores</li>
+                <li onclick="window.top.location.href='<?= appUrl ?>?page=dashboard'"><span
+                        class="material-icons-round">replay</span> Panel Principal</li>
+            </ul>
+        </nav>
+
+        <main class="main-content">
+            <header class="top-bar" style="border-bottom: none; padding-bottom: 0;">
+                <h2 id="page-title">Listado de Pedidos</h2>
+            </header>
+
+            <!-- ===== Barra de filtros ===== -->
+            <div class="filter-bar">
+                <div class="filter-row1">
+                    <div class="search-box">
+                        <span class="material-icons-round">search</span>
+                        <input type="text" id="search-input" placeholder="Buscar en TODOS los pedidos..."
+                            onkeyup="handleSearchDebounced()" onkeydown="handleSearchKeydown(event)">
+                    </div>
+
+                    <div class="export-actions">
+                        <select id="export-scope" class="export-select" title="Qué exportar">
+                            <option value="visible" selected>Exportar: Visible</option>
+                            <option value="all">Exportar: Todo</option>
+                        </select>
+
+                        <button class="btn-export" onclick="exportCSV()" title="Exportar CSV">
+                            <span class="material-icons-round" style="font-size:18px;">file_download</span> CSV
+                        </button>
+
+                        <button class="btn-export" onclick="exportSheet()" title="Exportar a Google Sheets">
+                            <span class="material-icons-round" style="font-size:18px;">table_view</span> Sheets
+                        </button>
+
+                        <button class="btn-clear" onclick="clearFilters()" title="Limpiar filtros">
+                            <span class="material-icons-round" style="font-size:18px;">filter_alt_off</span> Limpiar
+                        </button>
+                    </div>
+                </div>
+
+                <div class="filters-row2">
+                    <select id="filter-supplier" class="filter-select" onchange="handleSearch()">
+                        <option value="">Proveedor (Todos)</option>
+                    </select>
+                    <select id="filter-solicitante" class="filter-select" onchange="handleSearch()">
+                        <option value="">Solicitante (Todos)</option>
+                    </select>
+                    <select id="filter-comprador" class="filter-select" onchange="handleSearch()">
+                        <option value="">Comprador (Todos)</option>
+                    </select>
+                    <select id="filter-servido" class="filter-select" onchange="handleSearch()">
+                        <option value="">Servido (Todos)</option>
+                        <option value="Sí">Sí</option>
+                        <option value="No">No</option>
+                    </select>
+                    <select id="filter-autorizado" class="filter-select" onchange="handleSearch()">
+                        <option value="">Autorizado (Todos)</option>
+                        <option value="Sí">Sí</option>
+                        <option value="No">No</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Contenido con scroll horizontal -->
+            <div id="content-area">
+                <div class="loading-spinner">
+                    <div class="busy-spinner"></div>
+                    <p>Cargando datos...</p>
+                </div>
+            </div>
+
+            <!-- Paginación -->
+            <div id="pagination-bar" class="pagination-bar" style="display: none;">
+                <div class="pagination-info" id="pagination-info">Mostrando 0-0 de 0</div>
+                <div class="pagination-controls">
+                    <button class="page-btn" id="prev-btn" onclick="changePage(-1)">Anterior</button>
+                    <button class="page-btn" id="next-btn" onclick="changePage(1)">Siguiente</button>
+                </div>
+            </div>
+
+            <!-- FAB nuevo pedido (reposicionada) -->
+            <button class="fab" onclick="window.top.location.href='<?= appUrl ?>?page=orders'" title="Nuevo Pedido">
+                <span class="material-icons-round">add</span>
+            </button>
+        </main>
+    </div>
+
+    <!-- URL base segura -->
+    <input type="hidden" id="app-url" value="<?= appUrl ?>">
+
+    <!-- Overlay Exportando -->
+    <div id="busy-overlay" class="busy-overlay" aria-hidden="true">
+        <div class="busy-card">
+            <div class="busy-spinner"></div>
+            <div id="busy-text">Exportando…</div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+    <script>
+        let searchTimeout;
+        let currentPage = 1;
+        let currentFilters = {};
+        const pageSize = 20; // 20 por pantalla
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadInitialData();
+
+            // Atajos: / o Ctrl/Cmd+K => foco en buscador
+            document.addEventListener('keydown', (e) => {
+                const isInput = ['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName);
+                if (isInput) return;
+                if (e.key === '/' || (e.key.toLowerCase() === 'k' && (e.ctrlKey || e.metaKey))) {
+                    e.preventDefault();
+                    document.getElementById('search-input').focus();
+                }
+            });
+        });
+
+        function truncateText(text, maxLength = 25) {
+            if (!text) return '-';
+            if (text.length > maxLength) return text.substring(0, maxLength) + '...';
+            return text;
+        }
+
+        function loadInitialData() {
+            handleSearch();
+            google.script.run.withSuccessHandler(data => {
+                populateSelect('filter-supplier', data.empresas);
+                populateSelect('filter-solicitante', data.solicitantes);
+                populateSelect('filter-comprador', data.compradores);
+            }).getDropdownData();
+        }
+
+        function populateSelect(id, items) {
+            const select = document.getElementById(id);
+            if (!items) return;
+            items.sort((a, b) => a.name.localeCompare(b.name)).forEach(item => {
+                const opt = document.createElement('option');
+                opt.value = item.name;
+                opt.textContent = truncateText(item.name, 25);
+                select.appendChild(opt);
+            });
+        }
+
+        // ===== Buscar: debounce, Enter, Esc =====
+        function handleSearchDebounced() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => handleSearch(true), 500);
+        }
+        function handleSearchKeydown(e) {
+            if (e.key === 'Enter') { clearTimeout(searchTimeout); handleSearch(true); }
+            else if (e.key === 'Escape') {
+                const input = document.getElementById('search-input');
+                if (input.value) { input.value = ''; handleSearch(true); }
+            }
+        }
+
+        // ===== Limpiar filtros =====
+        function clearFilters() {
+            document.getElementById('search-input').value = '';
+            document.getElementById('filter-supplier').value = '';
+            document.getElementById('filter-solicitante').value = '';
+            document.getElementById('filter-comprador').value = '';
+            document.getElementById('filter-servido').value = '';
+            document.getElementById('filter-autorizado').value = '';
+            handleSearch(true);
+        }
+
+        function handleSearch(resetPage = true) {
+            if (resetPage) currentPage = 1;
+
+            currentFilters = {
+                search: document.getElementById('search-input').value,
+                supplier: document.getElementById('filter-supplier').value,
+                solicitante: document.getElementById('filter-solicitante').value,
+                comprador: document.getElementById('filter-comprador').value,
+                servido: document.getElementById('filter-servido').value,
+                autorizado: document.getElementById('filter-autorizado').value
+            };
+
+            const container = document.getElementById('content-area');
+            container.innerHTML = '<div class="loading-spinner"><div class="busy-spinner"></div><p style="margin-top:10px; color:var(--text-secondary);">Buscando en todos los registros...</p></div>';
+            document.getElementById('pagination-bar').style.display = 'none';
+
+            google.script.run
+                .withSuccessHandler(renderOrders)
+                .withFailureHandler(err => {
+                    console.error(err);
+                    container.innerHTML = `<p style="color:red; text-align:center;">Error al cargar: ${err.message}</p>`;
+                })
+                .searchOrders(currentFilters, currentPage, pageSize);
+        }
+
+        function changePage(delta) {
+            currentPage += delta;
+            if (currentPage < 1) currentPage = 1;
+            handleSearch(false);
+        }
+
+        // ===== Helpers de links =====
+        function renderDocChip(url, label) {
+            const safeLabel = (label || 'Ver').toString();
+            return `<a href="${url}" target="_blank" rel="noopener" class="doc-chip" title="${url}">
+                <span class="material-icons-round">link</span>${safeLabel}
+              </a>`;
+        }
+        function renderLinkCell(order, fieldName) {
+            const val = (order[fieldName] || '').toString().trim();
+            const url = order['Enlace_' + fieldName];
+            const label = val || 'Ver';
+            return url ? renderDocChip(url, label) : (val || '-');
+        }
+
+        function renderOrders(response) {
+            const container = document.getElementById('content-area');
+            const orders = response.orders;
+            const pagination = response.pagination;
+
+            if (!orders || orders.length === 0) {
+                container.innerHTML = '<p style="text-align:center; color:var(--text-secondary); margin-top: 2rem;">No se encontraron pedidos.</p>';
+                document.getElementById('pagination-bar').style.display = 'none';
+                return;
+            }
+
+            const baseUrl = document.getElementById('app-url').value;
+
+            let html = `
+        <table class="orders-table">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Proveedor</th>
+              <th>Descripción</th>
+              <th>Solicitante</th>
+              <th>GDC/PINV</th>
+              <th>SC</th>
+              <th>OC</th>
+              <th>Albarán</th>
+              <th>Factura</th>
+              <th>Presupuesto</th>
+              <th style="text-align:center;">Servido</th>
+              <th style="text-align:center;">Autorizado</th>
+            </tr>
+          </thead>
+          <tbody>`;
+
+            orders.forEach((order, idx) => {
+                let dateStr = order['Fecha Pedido'] ? new Date(order['Fecha Pedido']).toLocaleDateString() : '-';
+                if (dateStr === 'Invalid Date') dateStr = '-';
+
+                const servidoChecked = ['sí', 'si', 'yes'].includes(String(order['Servido']).toLowerCase()) ? 'checked' : '';
+                const authChecked = ['sí', 'si', 'yes'].includes(String(order['Autorizado']).toLowerCase()) ? 'checked' : '';
+
+                const editUrl = `${baseUrl}?page=orders&id=${order['Id_Pedido']}`;
+
+                const gdcCell = renderLinkCell(order, 'GDC_PINV');
+                const scCell = renderLinkCell(order, 'SC');
+                const ocCell = renderLinkCell(order, 'OC');
+                const albaranCell = renderLinkCell(order, 'Albarán');
+                const facturaCell = renderLinkCell(order, 'Factura');
+                const presupCell = renderLinkCell(order, 'Presupuesto');
+
+                html += `
+          <tr class="order-row" data-edit-url="${editUrl}" data-index="${idx}">
+            <td class="date-cell"><a href="${editUrl}" class="row-link" target="_blank" rel="noopener">${dateStr}</a></td>
+            <td class="supplier-cell"><a href="${editUrl}" class="row-link" target="_blank" rel="noopener">${truncateText(order['Proveedor'])}</a></td>
+            <td class="desc-cell"><a href="${editUrl}" class="row-link" target="_blank" rel="noopener">${truncateText(order['Descripción'], 35)}</a></td>
+            <td class="supplier-cell"><a href="${editUrl}" class="row-link" target="_blank" rel="noopener">${truncateText(order['Solicitante'])}</a></td>
+
+            <td class="link-cell">${gdcCell}</td>
+            <td class="link-cell">${scCell}</td>
+            <td class="link-cell">${ocCell}</td>
+            <td class="link-cell">${albaranCell}</td>
+            <td class="link-cell">${facturaCell}</td>
+            <td class="link-cell">${presupCell}</td>
+
+            <td class="checkbox-cell">
+              <input type="checkbox" ${servidoChecked}
+                     onclick="toggleField(event, '${order['Id_Pedido']}', 'Servido', this)">
+            </td>
+            <td class="checkbox-cell">
+              <input type="checkbox" ${authChecked}
+                     onclick="toggleField(event, '${order['Id_Pedido']}', 'Autorizado', this)">
+            </td>
+          </tr>`;
+            });
+
+            html += `</tbody></table>`;
+            container.innerHTML = html;
+
+            // Selección de fila y atajos ↑ ↓ Enter
+            initRowKeyboardNav();
+
+            updatePagination(pagination);
+        }
+
+        function updatePagination(pagination) {
+            const bar = document.getElementById('pagination-bar');
+            bar.style.display = 'flex';
+
+            const start = (pagination.page - 1) * pagination.pageSize + 1;
+            const end = Math.min(pagination.page * pagination.pageSize, pagination.total);
+            document.getElementById('pagination-info').textContent = `Mostrando ${start}-${end} de ${pagination.total}`;
+
+            document.getElementById('prev-btn').disabled = pagination.page <= 1;
+            document.getElementById('next-btn').disabled = pagination.page >= pagination.totalPages;
+        }
+
+        function toggleField(event, id, field, chk) {
+            event.stopPropagation();
+            const val = chk.checked ? 'Sí' : 'No';
+            google.script.run
+                .withFailureHandler(() => { chk.checked = !chk.checked; alert('Error actualizando'); })
+                .updateOrderField(id, field, val);
+        }
+
+        /* ===== Overlay / Toast / Busy ===== */
+        function showBusy(text) {
+            const ov = document.getElementById('busy-overlay');
+            const bt = document.getElementById('busy-text');
+            bt.textContent = text || 'Procesando…';
+            ov.classList.add('active');
+            ov.setAttribute('aria-hidden', 'false');
+        }
+        function hideBusy() {
+            const ov = document.getElementById('busy-overlay');
+            ov.classList.remove('active');
+            ov.setAttribute('aria-hidden', 'true');
+        }
+        function showToast(msg, ms = 2200) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), ms);
+        }
+        function setExportBusy(isBusy) {
+            const btns = document.querySelectorAll('.btn-export, .btn-clear, .export-select');
+            btns.forEach(b => b.disabled = !!isBusy);
+        }
+
+        /* ===== Exportaciones ===== */
+        function getExportScope() {
+            const el = document.getElementById('export-scope');
+            return (el && el.value) ? el.value : 'visible';
+        }
+
+        function exportCSV() {
+            const scope = getExportScope();
+            setExportBusy(true);
+            showBusy('Exportando CSV…');
+
+            google.script.run
+                .withSuccessHandler(res => {
+                    const a = document.createElement('a');
+                    a.href = `data:${res.mimeType};base64,${res.base64}`;
+                    a.download = res.filename;
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    hideBusy();
+                    setExportBusy(false);
+                    showToast('CSV exportado');
+                })
+                .withFailureHandler(err => {
+                    hideBusy();
+                    setExportBusy(false);
+                    alert('Error exportando CSV: ' + err.message);
+                })
+                .exportOrdersCSV(currentFilters, scope);
+        }
+
+        function exportSheet() {
+            const scope = getExportScope();
+
+            // Abrimos ventana en blanco SIN bloquear (gesto de usuario)
+            let win;
+            try { win = window.open('about:blank'); } catch (e) { /* ignorar */ }
+
+            setExportBusy(true);
+            showBusy('Exportando a Google Sheets…');
+
+            google.script.run
+                .withSuccessHandler(res => {
+                    hideBusy();
+                    setExportBusy(false);
+
+                    if (win) {
+                        try { win.location = res.url; }
+                        catch (e) { window.open(res.url, '_blank'); }
+                    } else {
+                        // Posible bloqueador: mostramos enlace manual
+                        const a = document.createElement('a');
+                        a.href = res.url; a.target = '_blank'; a.textContent = 'Abrir hoja exportada';
+                        a.style.display = 'none'; document.body.appendChild(a); a.click(); a.remove();
+                    }
+                    showToast('Hoja creada');
+                })
+                .withFailureHandler(err => {
+                    hideBusy();
+                    setExportBusy(false);
+                    if (win && !win.closed) try { win.close(); } catch (e) { }
+                    alert('Error exportando a Sheets: ' + err.message);
+                })
+                .exportOrdersToSheet(currentFilters, scope);
+        }
+
+        /* ===== Navegación por teclado en filas ===== */
+        function initRowKeyboardNav() {
+            const tbody = document.querySelector('.orders-table tbody');
+            if (!tbody) return;
+            const rows = Array.from(tbody.querySelectorAll('tr.order-row'));
+            if (!rows.length) return;
+
+            rows.forEach(r => r.classList.remove('selected'));
+            rows[0].classList.add('selected');
+
+            const contentArea = document.getElementById('content-area');
+            contentArea.tabIndex = 0; // focusable
+            contentArea.focus();
+
+            contentArea.onkeydown = (e) => {
+                const selectedIndex = rows.findIndex(r => r.classList.contains('selected'));
+                if (selectedIndex < 0) return;
+
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    const next = Math.min(selectedIndex + 1, rows.length - 1);
+                    rows[selectedIndex].classList.remove('selected');
+                    rows[next].classList.add('selected');
+                    rows[next].scrollIntoView({ block: 'nearest' });
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    const prev = Math.max(selectedIndex - 1, 0);
+                    rows[selectedIndex].classList.remove('selected');
+                    rows[prev].classList.add('selected');
+                    rows[prev].scrollIntoView({ block: 'nearest' });
+                } else if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const tr = rows[selectedIndex];
+                    const url = tr.getAttribute('data-edit-url');
+                    if (url) window.open(url, '_blank');
+                }
+            };
+        }
+    </script>
+</body>
+
+</html>

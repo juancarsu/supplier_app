@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <base target="_top">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --bg-color: #f3f4f6;
+            --card-bg: #ffffff;
+            --text-main: #1f2937;
+            --border-color: #e5e7eb;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-color);
+            color: var(--text-main);
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .back-btn {
+            text-decoration: none;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            font-size: 0.9rem;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 20px;
+            overflow-x: auto;
+        }
+
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+        .tab.active {
+            border-bottom-color: var(--primary-color);
+            color: var(--primary-color);
+        }
+
+        .list-group {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .list-item:last-child {
+            border-bottom: none;
+        }
+
+        .add-form {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            background: #f9fafb;
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        .add-form input {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+
+        /* Loading Overlay */
+        #loading {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="loading">
+        <div class="spinner"></div>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <a href="<?= ScriptApp.getService().getUrl() ?>?page=dashboard" class="back-btn">
+                <span class="material-icons">arrow_back</span> Volver al Panel
+            </a>
+            <h2>Configuración de Datos Auxiliares</h2>
+        </div>
+
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('Compradores')">Compradores</div>
+            <div class="tab" onclick="switchTab('MediosPedido')">Medios Pedido</div>
+            <div class="tab" onclick="switchTab('Zonas')">Zonas</div>
+            <div class="tab" onclick="switchTab('Edificios')">Edificios</div>
+            <div class="tab" onclick="switchTab('Solicitantes')">Solicitantes</div>
+        </div>
+
+        <div id="dynamicContent">
+            <!-- Content injected here -->
+        </div>
+    </div>
+
+    <script>
+        let currentSheet = 'Compradores';
+        let dataCache = {};
+
+        const SHEET_CONFIG = {
+            'Compradores': { field: 'Nombre Comprador', label: 'Comprador' },
+            'MediosPedido': { field: 'Medio de Pedido', label: 'Medio de Pedido' },
+            'Zonas': { field: 'Nombre Zona', label: 'Zona' },
+            'Edificios': { field: 'Nombre Edificio', label: 'Edificio' },
+            'Solicitantes': { field: 'Nombre Solicitante', label: 'Solicitante' }
+        };
+
+        function switchTab(sheetName) {
+            currentSheet = sheetName;
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(t => {
+                if (t.textContent.includes(sheetName === 'MediosPedido' ? 'Medios Pedido' : sheetName)) {
+                    t.classList.add('active');
+                }
+            });
+
+            renderContent();
+            loadData();
+        }
+
+        function renderContent() {
+            const container = document.getElementById('dynamicContent');
+            const config = SHEET_CONFIG[currentSheet];
+
+            if (!config) {
+                container.innerHTML = '<p>Error de configuración.</p>';
+                return;
+            }
+
+            const fieldName = config.field;
+            const singular = config.label;
+
+            container.innerHTML = `
+          <div class="add-form">
+            <input type="text" id="newItemName" placeholder="Nuevo ${singular}...">
+            <button class="btn btn-primary" onclick="addItem('${fieldName}')">Añadir</button>
+          </div>
+          <ul class="list-group" id="itemList">
+            <li class="list-item">Cargando...</li>
+          </ul>
+        `;
+        }
+
+        function loadData() {
+            const targetSheet = currentSheet;
+            google.script.run
+                .withSuccessHandler(items => {
+                    if (targetSheet !== currentSheet) return;
+                    dataCache[currentSheet] = items;
+                    renderList(items);
+                })
+                .withFailureHandler((err) => {
+                    console.error('Error loading data:', err);
+                    const list = document.getElementById('itemList');
+                    if (list) {
+                        list.innerHTML = '<li class="list-item" style="color:red;">Error al cargar datos: ' + err.message + '</li>';
+                    }
+                })
+                .getData(currentSheet);
+        }
+
+        function renderList(items) {
+            const list = document.getElementById('itemList');
+            if (!list) return; // Guard if tab switched fast
+
+            list.innerHTML = '';
+            if (!items || items.length === 0) {
+                list.innerHTML = '<li class="list-item">No hay datos.</li>';
+                return;
+            }
+
+            const config = SHEET_CONFIG[currentSheet];
+            const nameField = config ? config.field : null;
+
+            items.forEach(item => {
+                // Find ID (always starts with Id_)
+                const keys = Object.keys(item);
+                let idKey = keys.find(k => k.startsWith('Id_'));
+                if (!idKey) idKey = keys[0]; // Fallback
+
+                const id = item[idKey];
+                // Use configured field name, or fallback to discovery
+                let name = nameField ? item[nameField] : null;
+
+                if (!name) {
+                    // Fallback discovery if config fails or data is weird
+                    let nameKey = keys.find(k => !k.startsWith('Id_'));
+                    name = item[nameKey];
+                }
+
+                const li = document.createElement('li');
+                li.className = 'list-item';
+                li.innerHTML = `
+            <span>${name || '(Sin nombre)'}</span>
+            <button class="btn btn-danger" onclick="deleteItem('${id}')"><span class="material-icons" style="font-size:16px;">delete</span></button>
+          `;
+                list.appendChild(li);
+            });
+        }
+
+        function addItem(fieldName) {
+            const nameInput = document.getElementById('newItemName');
+            const name = nameInput.value.trim();
+            if (!name) return;
+
+            document.getElementById('loading').style.display = 'flex';
+            const formObject = {};
+            formObject[fieldName] = name;
+
+            google.script.run
+                .withSuccessHandler(() => {
+                    document.getElementById('loading').style.display = 'none';
+                    nameInput.value = ''; // Clear input
+                    loadData();
+                })
+                .withFailureHandler((err) => {
+                    document.getElementById('loading').style.display = 'none';
+                    console.error('Error adding item:', err);
+                    alert('Error al añadir el elemento: ' + err.message);
+                })
+                .saveRecord(currentSheet, formObject);
+        }
+
+        function deleteItem(id) {
+            if (!confirm('¿Estás seguro de eliminar este elemento?')) return;
+
+            document.getElementById('loading').style.display = 'flex';
+            google.script.run
+                .withSuccessHandler(() => {
+                    document.getElementById('loading').style.display = 'none';
+                    loadData();
+                })
+                .withFailureHandler((err) => {
+                    document.getElementById('loading').style.display = 'none';
+                    console.error('Error deleting item:', err);
+                    alert('Error al eliminar el elemento: ' + err.message);
+                })
+                .deleteRecord(currentSheet, id);
+        }
+
+        // Initial load
+        renderContent();
+        loadData();
+    </script>
+</body>
+
+</html>
