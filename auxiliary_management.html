@@ -1,334 +1,203 @@
 <!DOCTYPE html>
 <html>
-
 <head>
-    <base target="_top">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <style>
-        :root {
-            --primary-color: #2563eb;
-            --bg-color: #f3f4f6;
-            --card-bg: #ffffff;
-            --text-main: #1f2937;
-            --border-color: #e5e7eb;
-        }
+  <base target="_top">
+  <meta charset="utf-8">
+  <title>Configuración de Datos Auxiliares</title>
+  <?!= include('css'); ?>
+  <style>
+    /* Ajustes mínimos (respetando tu estética de tarjeta + tabs) */
+    .page { max-width: 960px; margin: 24px auto; padding: 0 16px; }
+    .card { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px 16px 8px; }
+    .header { display: flex; align-items: center; gap: 14px; margin-bottom: 6px; }
+    .back { color: #374151; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+    .title { font-size: 1.25rem; font-weight: 700; margin-left: auto; margin-right: auto; }
 
-        body {
-            font-family: 'Inter', sans-serif;
-            background: var(--bg-color);
-            color: var(--text-main);
-            padding: 20px;
-        }
+    .tabs { display: flex; gap: 16px; border-bottom: 1px solid #e5e7eb; margin: 12px 0; }
+    .tab { padding: 10px 8px; cursor: pointer; color: #374151; border-bottom: 2px solid transparent; font-weight: 600; }
+    .tab.active { color: #111827; border-color: #2563eb; }
 
-        .container {
-            max-width: 1000px;
-            margin: 0 auto;
-            background: var(--card-bg);
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-        }
+    .input-row { display: flex; gap: 8px; align-items: center; margin: 12px 0; }
+    .input-row input { flex: 1; padding: 8px 10px; border: 1px solid #e5e7eb; border-radius: 8px; }
+    .btn { padding: 8px 12px; border-radius: 8px; cursor: pointer; border: 1px solid #e5e7eb; background: #fff; font-weight: 600; }
+    .btn-primary { background: #2563eb; color: #fff; border-color: #2563eb; }
+    .btn-danger  { background: #ef4444; color: #fff; border-color: #ef4444; }
+    .btn-light   { background: #f3f4f6; color: #374151; }
 
-        .header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 20px;
-        }
+    .list { display: flex; flex-direction: column; gap: 8px; }
+    .item { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; border: 1px solid #e5e7eb; border-radius: 10px; }
+    .name { font-weight: 500; color: #111827; cursor: text; }
+    .muted { color: #6b7280; }
 
-        .back-btn {
-            text-decoration: none;
-            color: var(--text-main);
-            display: flex;
-            align-items: center;
-            font-size: 0.9rem;
-        }
-
-        .tabs {
-            display: flex;
-            gap: 10px;
-            border-bottom: 1px solid var(--border-color);
-            margin-bottom: 20px;
-            overflow-x: auto;
-        }
-
-        .tab {
-            padding: 10px 20px;
-            cursor: pointer;
-            border-bottom: 2px solid transparent;
-            font-weight: 500;
-            white-space: nowrap;
-        }
-
-        .tab.active {
-            border-bottom-color: var(--primary-color);
-            color: var(--primary-color);
-        }
-
-        .list-group {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-
-        .list-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .list-item:last-child {
-            border-bottom: none;
-        }
-
-        .add-form {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-            background: #f9fafb;
-            padding: 15px;
-            border-radius: 8px;
-        }
-
-        .add-form input {
-            flex: 1;
-            padding: 8px;
-            border: 1px solid var(--border-color);
-            border-radius: 4px;
-        }
-
-        .btn {
-            padding: 8px 16px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: 500;
-        }
-
-        .btn-primary {
-            background: var(--primary-color);
-            color: white;
-        }
-
-        .btn-danger {
-            background: #ef4444;
-            color: white;
-        }
-
-        /* Loading Overlay */
-        #loading {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(255, 255, 255, 0.8);
-            z-index: 1000;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .spinner {
-            width: 40px;
-            height: 40px;
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid var(--primary-color);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            0% {
-                transform: rotate(0deg);
-            }
-
-            100% {
-                transform: rotate(360deg);
-            }
-        }
-    </style>
+    .edit-row { display: flex; gap: 8px; align-items: center; width: 100%; }
+    .edit-row input { flex: 1; padding: 8px 10px; border: 1px solid #e5e7eb; border-radius: 8px; }
+  </style>
 </head>
 
 <body>
-    <div id="loading">
-        <div class="spinner"></div>
+  <div class="page">
+    <div class="card">
+      <div class="header">
+        <a class="back" href="<?= appUrl ? appUrl + '?page=dashboard' : '#' ?>">← Volver al Panel</a>
+        <div class="title">Configuración de Datos Auxiliares</div>
+      </div>
+
+      <!-- Pestañas -->
+      <div class="tabs" id="tabs">
+        <div class="tab active" data-type="Compradores"    onclick="selectTab(this)">Compradores</div>
+        <div class="tab"         data-type="MediosPedido"   onclick="selectTab(this)">Medios Pedido</div>
+        <div class="tab"         data-type="Zonas"          onclick="selectTab(this)">Zonas</div>
+        <div class="tab"         data-type="Edificios"      onclick="selectTab(this)">Edificios</div>
+        <div class="tab"         data-type="Solicitantes"   onclick="selectTab(this)">Solicitantes</div>
+      </div>
+
+      <!-- Caja de alta -->
+      <div class="input-row">
+        <input id="newValueInput" type="text" placeholder="Nuevo Comprador..." />
+        <button class="btn btn-primary" onclick="addCurrent()">Añadir</button>
+      </div>
+
+      <!-- Lista -->
+      <div id="list" class="list">
+        <div class="muted">Cargando Compradores...</div>
+      </div>
     </div>
+  </div>
 
-    <div class="container">
-        <div class="header">
-            <a href="<?= ScriptApp.getService().getUrl() ?>?page=dashboard" class="back-btn">
-                <span class="material-icons">arrow_back</span> Volver al Panel
-            </a>
-            <h2>Configuración de Datos Auxiliares</h2>
-        </div>
+  <?!= include('js'); ?>
 
-        <div class="tabs">
-            <div class="tab active" onclick="switchTab('Compradores')">Compradores</div>
-            <div class="tab" onclick="switchTab('MediosPedido')">Medios Pedido</div>
-            <div class="tab" onclick="switchTab('Zonas')">Zonas</div>
-            <div class="tab" onclick="switchTab('Edificios')">Edificios</div>
-            <div class="tab" onclick="switchTab('Solicitantes')">Solicitantes</div>
-        </div>
+  <script>
+    // Endpoints expuestos por Code.gs
+    const ENDPOINTS = {
+      list:   'listAux',
+      add:    'addAuxItem',
+      update: 'updateAuxItem',
+      delete: 'deleteAuxItem'
+    };
 
-        <div id="dynamicContent">
-            <!-- Content injected here -->
-        </div>
-    </div>
+    const STATE = {
+      type: 'Compradores',
+      items: [],
+      editingId: null
+    };
 
-    <script>
-        let currentSheet = 'Compradores';
-        let dataCache = {};
+    function selectTab(el) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      el.classList.add('active');
+      STATE.type = el.dataset.type;
+      document.getElementById('newValueInput').placeholder = `Nuevo ${el.textContent.trim()}...`;
+      loadCurrent();
+    }
 
-        const SHEET_CONFIG = {
-            'Compradores': { field: 'Nombre Comprador', label: 'Comprador' },
-            'MediosPedido': { field: 'Medio de Pedido', label: 'Medio de Pedido' },
-            'Zonas': { field: 'Nombre Zona', label: 'Zona' },
-            'Edificios': { field: 'Nombre Edificio', label: 'Edificio' },
-            'Solicitantes': { field: 'Nombre Solicitante', label: 'Solicitante' }
-        };
+    function loadCurrent() {
+      const list = document.getElementById('list');
+      list.innerHTML = `<div class="muted">Cargando ${STATE.type}...</div>`;
 
-        function switchTab(sheetName) {
-            currentSheet = sheetName;
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            const tabs = document.querySelectorAll('.tab');
-            tabs.forEach(t => {
-                if (t.textContent.includes(sheetName === 'MediosPedido' ? 'Medios Pedido' : sheetName)) {
-                    t.classList.add('active');
-                }
-            });
+      google.script.run
+        .withSuccessHandler(data => {
+          STATE.items = (Array.isArray(data) ? data : []);
+          STATE.editingId = null;
+          renderList();
+        })
+        .withFailureHandler(err => {
+          console.error(err);
+          list.innerHTML = `<div class="muted">Error al cargar ${STATE.type}.</div>`;
+        })[ENDPOINTS.list](STATE.type);
+    }
 
-            renderContent();
-            loadData();
-        }
+    function addCurrent() {
+      const inp = document.getElementById('newValueInput');
+      const value = (inp.value || '').trim();
+      if (!value) { inp.focus(); return; }
 
-        function renderContent() {
-            const container = document.getElementById('dynamicContent');
-            const config = SHEET_CONFIG[currentSheet];
+      google.script.run
+        .withSuccessHandler(() => { inp.value = ''; loadCurrent(); })
+        .withFailureHandler(err => { console.error(err); alert('No se pudo crear el registro.'); })
+        [ENDPOINTS.add](STATE.type, value);
+    }
 
-            if (!config) {
-                container.innerHTML = '<p>Error de configuración.</p>';
-                return;
-            }
+    function deleteItem(id) {
+      if (!confirm(`¿Eliminar este registro de ${STATE.type}?`)) return;
+      google.script.run
+        .withSuccessHandler(() => loadCurrent())
+        .withFailureHandler(err => { console.error(err); alert('No se pudo eliminar el registro.'); })
+        [ENDPOINTS.delete](STATE.type, id);
+    }
 
-            const fieldName = config.field;
-            const singular = config.label;
+    function startEdit(id) {
+      STATE.editingId = id;
+      renderList();
+      const inp = document.querySelector(`input[data-edit-id="${cssEscape(id)}"]`);
+      if (inp) inp.focus();
+    }
 
-            container.innerHTML = `
-          <div class="add-form">
-            <input type="text" id="newItemName" placeholder="Nuevo ${singular}...">
-            <button class="btn btn-primary" onclick="addItem('${fieldName}')">Añadir</button>
-          </div>
-          <ul class="list-group" id="itemList">
-            <li class="list-item">Cargando...</li>
-          </ul>
-        `;
-        }
+    function saveEdit(id) {
+      const inp = document.querySelector(`input[data-edit-id="${cssEscape(id)}"]`);
+      const newValue = (inp?.value || '').trim();
+      if (!newValue) { inp?.focus(); return; }
 
-        function loadData() {
-            const targetSheet = currentSheet;
-            google.script.run
-                .withSuccessHandler(items => {
-                    if (targetSheet !== currentSheet) return;
-                    dataCache[currentSheet] = items;
-                    renderList(items);
-                })
-                .withFailureHandler((err) => {
-                    console.error('Error loading data:', err);
-                    const list = document.getElementById('itemList');
-                    if (list) {
-                        list.innerHTML = '<li class="list-item" style="color:red;">Error al cargar datos: ' + err.message + '</li>';
-                    }
-                })
-                .getData(currentSheet);
-        }
+      google.script.run
+        .withSuccessHandler(() => { STATE.editingId = null; loadCurrent(); })
+        .withFailureHandler(err => { console.error(err); alert('No se pudo actualizar el registro.'); })
+        [ENDPOINTS.update](STATE.type, id, newValue);
+    }
 
-        function renderList(items) {
-            const list = document.getElementById('itemList');
-            if (!list) return; // Guard if tab switched fast
+    function cancelEdit() {
+      STATE.editingId = null;
+      renderList();
+    }
 
-            list.innerHTML = '';
-            if (!items || items.length === 0) {
-                list.innerHTML = '<li class="list-item">No hay datos.</li>';
-                return;
-            }
+    function renderList() {
+      const list = document.getElementById('list');
+      if (!STATE.items.length) {
+        list.innerHTML = `<div class="muted">No hay registros.</div>`;
+        return;
+      }
+      list.innerHTML = STATE.items.map((it, idx) => {
+        const id = String(it.id ?? idx);
+        const name = String(it.name ?? '');
+        const isEditing = String(STATE.editingId) === id;
 
-            const config = SHEET_CONFIG[currentSheet];
-            const nameField = config ? config.field : null;
-
-            items.forEach(item => {
-                // Find ID (always starts with Id_)
-                const keys = Object.keys(item);
-                let idKey = keys.find(k => k.startsWith('Id_'));
-                if (!idKey) idKey = keys[0]; // Fallback
-
-                const id = item[idKey];
-                // Use configured field name, or fallback to discovery
-                let name = nameField ? item[nameField] : null;
-
-                if (!name) {
-                    // Fallback discovery if config fails or data is weird
-                    let nameKey = keys.find(k => !k.startsWith('Id_'));
-                    name = item[nameKey];
-                }
-
-                const li = document.createElement('li');
-                li.className = 'list-item';
-                li.innerHTML = `
-            <span>${name || '(Sin nombre)'}</span>
-            <button class="btn btn-danger" onclick="deleteItem('${id}')"><span class="material-icons" style="font-size:16px;">delete</span></button>
+        if (isEditing) {
+          return `
+            <div class="item" data-id="${escapeHTML(id)}">
+              <div class="edit-row">
+                <input type="text" value="${escapeAttr(name)}" data-edit-id="${escapeAttr(id)}" />
+                <div class="actions">
+                  <button class="btn btn-primary" onclick="saveEdit('${escapeAttr(id)}')">Guardar</button>
+                  <button class="btn btn-light"   onclick="cancelEdit()">Cancelar</button>
+                </div>
+              </div>
+            </div>
           `;
-                list.appendChild(li);
-            });
         }
+        return `
+          <div class="item" data-id="${escapeHTML(id)}">
+            <div class="name" onclick="startEdit('${escapeAttr(id)}')" title="Editar">${escapeHTML(name)}</div>
+            <div class="actions">
+              <button class="btn btn-danger" onclick="deleteItem('${escapeAttr(id)}')" title="Eliminar">🗑️</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
 
-        function addItem(fieldName) {
-            const nameInput = document.getElementById('newItemName');
-            const name = nameInput.value.trim();
-            if (!name) return;
+    // Utilidades básicas
+    function escapeHTML(str) {
+      return String(str).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
+    }
+    function escapeAttr(str) {
+      return String(str)
+        .replaceAll('&','&amp;').replaceAll('"','&quot;').replaceAll("'",'&#39;')
+        .replaceAll('<','&lt;').replaceAll('>','&gt;');
+    }
+    function cssEscape(str) { return String(str).replace(/["'\\]/g, '\\$&'); }
 
-            document.getElementById('loading').style.display = 'flex';
-            const formObject = {};
-            formObject[fieldName] = name;
-
-            google.script.run
-                .withSuccessHandler(() => {
-                    document.getElementById('loading').style.display = 'none';
-                    nameInput.value = ''; // Clear input
-                    loadData();
-                })
-                .withFailureHandler((err) => {
-                    document.getElementById('loading').style.display = 'none';
-                    console.error('Error adding item:', err);
-                    alert('Error al añadir el elemento: ' + err.message);
-                })
-                .saveRecord(currentSheet, formObject);
-        }
-
-        function deleteItem(id) {
-            if (!confirm('¿Estás seguro de eliminar este elemento?')) return;
-
-            document.getElementById('loading').style.display = 'flex';
-            google.script.run
-                .withSuccessHandler(() => {
-                    document.getElementById('loading').style.display = 'none';
-                    loadData();
-                })
-                .withFailureHandler((err) => {
-                    document.getElementById('loading').style.display = 'none';
-                    console.error('Error deleting item:', err);
-                    alert('Error al eliminar el elemento: ' + err.message);
-                })
-                .deleteRecord(currentSheet, id);
-        }
-
-        // Initial load
-        renderContent();
-        loadData();
-    </script>
+    // Carga inicial
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('newValueInput').placeholder = 'Nuevo Comprador...';
+      loadCurrent();
+    });
+  </script>
 </body>
-
 </html>
