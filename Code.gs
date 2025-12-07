@@ -1,134 +1,185 @@
-// ==========================================
-// 🚀 GESTIÓN DE PEDIDOS - BACKEND (con caché + export)
-// ==========================================
-// Versión 1.0
-// Juan Carlos Suárez
 
-// --- Menú
+// ==========================================
+// 🚀 GESTIÓN DE PEDIDOS - BACKEND (caché + export + auditoría)
+// Versión 1.4 (sin URL manual, navegación robusta, búsqueda, export y autorizaciones)
+// ==========================================
+
+// ===== Helpers de URL / navegación =====
+
+/** URL del deployment vigente de la App Web (o null si no hay). */
+function getAppUrl_() {
+  try {
+    var url = ScriptApp.getService().getUrl();
+    return url || null;
+  } catch (e) {
+    return null;
+  }
+}
+
+/** Elige la mejor página de lista disponible: 'orders' | 'orders_list' | 'dashboard'. */
+function getPreferredOrdersPage() {
+  var candidates = ['orders_list', 'orders'];
+  for (var i = 0; i < candidates.length; i++) {
+    try {
+      HtmlService.createHtmlOutputFromFile(candidates[i]); // prueba existencia de archivo
+      return candidates[i];
+    } catch (e) { /* sigue */ }
+  }
+  return 'dashboard';
+}
+
+/** Construye una URL absoluta y segura hacia page (en el deployment activo). */
+function getAppPageUrl(page) {
+  var url = getAppUrl_();
+  if (!url) return ''; // el cliente avisará si viene vacío
+  return url + (url.indexOf('?') >= 0 ? '&' : '?') + 'page=' + encodeURIComponent(page || 'dashboard');
+}
+
+/** Devuelve la URL absoluta a la lista de pedidos (orders u orders_list). */
+function getOrdersListUrl() {
+  var page = getPreferredOrdersPage();
+  return getAppPageUrl(page);
+}
+
+// ===== Menú =====
 function onOpen() {
   SpreadsheetApp.getUi()
     .createMenu('🚀 Gestión Pedidos')
-    .addItem('🌐 Abrir App Principal', 'openWebApp')
+    .addItem('📦 Abrir App Principal', 'openWebApp')
     .addSeparator()
     .addItem('📒 Agenda de Proveedores', 'openSuppliersList')
     .addToUi();
 }
 
-// URL manual de respaldo
-const MANUAL_WEB_APP_URL = 'https://script.google.com/a/macros/unav.es/s/AKfycbyyS1Dh-sgCcZ56QL2mb7SyFe7kY2K7BnxIceAaUDLZej6euUlj9nZO-YJOLL2IDEEb/exec';
-
+/** Abrir portada (dashboard) — sin URL manual. */
 function openWebApp() {
-  var url = MANUAL_WEB_APP_URL || ScriptApp.getService().getUrl();
-  url += (url.indexOf('?') !== -1 ? '&' : '?') + 'page=dashboard';
-  var html = "<html><script>window.open('" + url + "', '_blank');google.script.host.close();</script></html>";
-  SpreadsheetApp.getUi().showModalDialog(HtmlService.createHtmlOutput(html).setWidth(300).setHeight(100), 'Abriendo App...');
-}
-function openSuppliersList() {
-  var url = MANUAL_WEB_APP_URL || ScriptApp.getService().getUrl();
-  url += (url.indexOf('?') !== -1 ? '&' : '?') + 'page=suppliers';
-  var html = "<html><script>window.open('" + url + "', '_blank');google.script.host.close();</script></html>";
-  SpreadsheetApp.getUi().showModalDialog(HtmlService.createHtmlOutput(html).setWidth(300).setHeight(100), 'Abriendo Agenda...');
-}
-function showLauncherSidebar() {
-  var url = MANUAL_WEB_APP_URL || ScriptApp.getService().getUrl();
-  var template = HtmlService.createTemplateFromFile('launcher');
-  template.appUrl = url;
-  SpreadsheetApp.getUi().showSidebar(template.evaluate().setTitle('Gestión de Pedidos').setWidth(300));
+  var url = getAppPageUrl('dashboard');
+  if (!url) {
+    SpreadsheetApp.getUi().alert(
+      'Este proyecto aún no está desplegado como Aplicación Web.\n\n' +
+      'Ve a Publicar → Implementar como aplicación web → Guardar y desplegar.\n' +
+      'Luego vuelve a ejecutar esta opción del menú.'
+    );
+    return;
+  }
+  var html = HtmlService.createHtmlOutput(
+    '<script>window.top.location.href = ' + JSON.stringify(url) + ';</script>'
+  ).setWidth(120).setHeight(30);
+  SpreadsheetApp.getUi().showModalDialog(html, 'Abriendo App...');
 }
 
-// --- Enrutamiento Web (doGet)
+/** Abrir agenda de proveedores — sin URL manual. */
+function openSuppliersList() {
+  var url = getAppPageUrl('suppliers');
+  if (!url) {
+    SpreadsheetApp.getUi().alert(
+      'Este proyecto aún no está desplegado como Aplicación Web.\n\n' +
+      'Ve a Publicar → Implementar como aplicación web → Guardar y desplegar.'
+    );
+    return;
+  }
+  var html = HtmlService.createHtmlOutput(
+    '<script>window.top.location.href = ' + JSON.stringify(url) + ';</script>'
+  ).setWidth(120).setHeight(30);
+  SpreadsheetApp.getUi().showModalDialog(html, 'Abriendo Agenda...');
+}
+
+// ===== Enrutamiento Web (doGet) =====
 function doGet(e) {
-  var page = e.parameter.page || 'dashboard';
+  var page = (e && e.parameter && e.parameter.page) || 'dashboard';
   var title = 'Panel de Control';
   var filename = page;
 
-  if (page === 'suppliers') title = 'Gestión de Proveedores';
-  else if (page === 'orders') title = 'Gestión de Pedidos';
+  if (page === 'suppliers')     title = 'Gestión de Proveedores';
+  else if (page === 'orders')   title = 'Gestión de Pedidos';
   else if (page === 'orders_list') { title = 'Listado de Pedidos'; filename = 'orders_list'; }
-  else if (page === 'auxiliary')   { title = 'Configuración';      filename = 'auxiliary_management'; }
-  else if (page === 'authorizations') { title = 'Autorizaciones';  filename = 'authorizations'; }
+  else if (page === 'auxiliary')    { title = 'Configuración';      filename = 'auxiliary_management'; }
+  else if (page === 'authorizations') { title = 'Autorizaciones';   filename = 'authorizations'; }
 
   try {
-    let template = HtmlService.createTemplateFromFile(filename);
-    template.data = e.parameter;
-    template.appUrl = ScriptApp.getService().getUrl(); // URL explícita
-    return template.evaluate().setTitle(title).addMetaTag('viewport', 'width=device-width, initial-scale=1');
+    var template = HtmlService.createTemplateFromFile(filename);
+    template.data       = e ? (e.parameter || {}) : {};
+    template.appUrl     = getAppUrl_();             // URL del deployment activo (o null si no hay)
+    template.ordersPage = getPreferredOrdersPage(); // 'orders' | 'orders_list' | 'dashboard'
+    return template.evaluate()
+      .setTitle(title)
+      .addMetaTag('viewport', 'width=device-width, initial-scale=1');
   } catch (err) {
-    return HtmlService.createHtmlOutput(`<h2>Error 404</h2><p>Página no encontrada: ${filename}</p>`);
+    return HtmlService.createHtmlOutput(
+      '<h3>Error 404</h3><p>Página no encontrada: ' + filename + '</p>'
+    );
   }
 }
+
 function include(filename) {
-  try { return HtmlService.createHtmlOutputFromFile(filename).getContent(); }
-  catch (e) { return ''; }
+  try {
+    return HtmlService.createHtmlOutputFromFile(filename).getContent();
+  } catch (e) {
+    return '';
+  }
 }
 
-// --- Configuración BBDD
+// ===== Configuración BBDD =====
 const SHEETS = {
-  PROVEEDORES: 'Proveedores', EMPRESAS: 'Empresas', TIPOS: 'Tipos',
-  PEDIDOS: 'Pedidos', COMPRADORES: 'Compradores', MEDIOS_PEDIDO: 'MediosPedido',
-  ZONAS: 'Zonas', EDIFICIOS: 'Edificios', SOLICITANTES: 'Solicitantes'
+  PROVEEDORES:   'Proveedores',
+  EMPRESAS:      'Empresas',
+  TIPOS:         'Tipos',
+  PEDIDOS:       'Pedidos',
+  COMPRADORES:   'Compradores',
+  MEDIOS_PEDIDO: 'MediosPedido',
+  ZONAS:         'Zonas',
+  EDIFICIOS:     'Edificios',
+  SOLICITANTES:  'Solicitantes'
 };
+
 function getSheet(name) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   let sheet = ss.getSheetByName(name);
   if (!sheet) sheet = ss.insertSheet(name);
   return sheet;
 }
+
 function getHeaders(sheetName) {
   switch (sheetName) {
-    case SHEETS.PROVEEDORES: return ['Id_Proveedor', 'Nombre', 'Apellidos', 'Teléfono', 'Empresa', 'Email', 'Estado', 'Notas'];
-    case SHEETS.EMPRESAS:    return ['Id_Empresa', 'Nombre Empresa', 'CIF', 'Dirección', 'CP', 'Población', 'Provincia', 'Teléfono', 'Email', 'Tipo Proveedor', 'Notas'];
-    case SHEETS.TIPOS:       return ['Id_Tipo', 'Tipo de Proveedor'];
-    case SHEETS.PEDIDOS:     return [
-      'Id_Pedido', 'Proveedor', 'Descripción', 'Fecha Pedido', 'Fecha Estimada', 'Fecha Llegada',
-      'Comprador', 'Servido', 'GDC_PINV', 'Autorizado', 'Medio Pedido', 'Zona', 'Edificio',
-      'Solicitante', 'SC', 'OC', 'Albarán', 'Factura', 'Presupuesto', 'Notas', 'Importe', 'Adjuntos'
+    case SHEETS.PROVEEDORES:   return ['Id_Proveedor', 'Nombre', 'Apellidos', 'Teléfono', 'Empresa', 'Email', 'Estado', 'Notas'];
+    case SHEETS.EMPRESAS:      return ['Id_Empresa', 'Nombre Empresa', 'CIF', 'Dirección', 'CP', 'Población', 'Provincia', 'Teléfono', 'Email', 'Tipo Proveedor', 'Notas'];
+    case SHEETS.TIPOS:         return ['Id_Tipo', 'Tipo de Proveedor'];
+    case SHEETS.PEDIDOS:       return [
+      'Id_Pedido','Proveedor','Descripción','Fecha Pedido','Fecha Estimada','Fecha Llegada','Comprador','Servido','GDC_PINV','Autorizado',
+      'Medio Pedido','Zona','Edificio','Solicitante','SC','OC','Albarán','Factura','Presupuesto','Notas','Importe','Adjuntos'
     ];
-    case SHEETS.COMPRADORES: return ['Id_Comprador', 'Nombre Comprador'];
-    case SHEETS.MEDIOS_PEDIDO:return ['Id_Medio', 'Medio de Pedido'];
-    case SHEETS.ZONAS:       return ['Id_Zona', 'Nombre Zona'];
-    case SHEETS.EDIFICIOS:   return ['Id_Edificio', 'Nombre Edificio'];
-    case SHEETS.SOLICITANTES:return ['Id_Solicitante', 'Nombre Solicitante'];
+    case SHEETS.COMPRADORES:   return ['Id_Comprador', 'Nombre Comprador'];
+    case SHEETS.MEDIOS_PEDIDO: return ['Id_Medio', 'Medio de Pedido'];
+    case SHEETS.ZONAS:         return ['Id_Zona', 'Nombre Zona'];
+    case SHEETS.EDIFICIOS:     return ['Id_Edificio', 'Nombre Edificio'];
+    case SHEETS.SOLICITANTES:  return ['Id_Solicitante', 'Nombre Solicitante'];
     default: return [];
   }
 }
+
 function sanitizeValue(value) {
   if (value instanceof Date) return value.toISOString();
   if (value === null || value === undefined) return '';
   return value;
 }
 
-// ==========================================
-// 📊 MÉTODO getData() - PARA PROVEEDORES/EMPRESAS/TIPOS
-// ==========================================
+// ===== getData base =====
 function getData(sheetName, maxRows = 0) {
   try {
     const sheet = getSheet(sheetName);
     const lastRow = sheet.getLastRow();
-    
-    // Si no hay datos (solo cabecera o vacío), devolver array vacío
-    if (lastRow < 2) {
-      console.log(`getData: ${sheetName} está vacío (lastRow=${lastRow})`);
-      return [];
-    }
-
+    if (lastRow < 2) return [];
     const lastCol = sheet.getLastColumn();
-    if (lastCol === 0) {
-      console.log(`getData: ${sheetName} no tiene columnas`);
-      return [];
-    }
+    if (lastCol === 0) return [];
 
     let startRow = 2;
     let numRows = lastRow - 1;
-
-    // Si maxRows > 0, tomar solo las últimas filas
     if (maxRows > 0 && numRows > maxRows) {
       startRow = lastRow - maxRows + 1;
       numRows = maxRows;
     }
-
-    const range = sheet.getRange(startRow, 1, numRows, lastCol);
-    const data = range.getValues();
+    const range   = sheet.getRange(startRow, 1, numRows, lastCol);
+    const data    = range.getValues();
     const headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
 
     return data.map(row => {
@@ -137,20 +188,18 @@ function getData(sheetName, maxRows = 0) {
       return obj;
     });
   } catch (e) {
-    console.error(`Error en getData(${sheetName}): ${e}`);
+    console.error('Error en getData(' + sheetName + '): ' + e);
     return [];
   }
 }
 
-// ==========================================
-// 📊 MÉTODO ESPECÍFICO PARA SUPPLIERS (getAllData)
-// ==========================================
+// ===== Datos auxiliares (si los usas) =====
 function getAllData() {
   try {
     return {
       suppliers: getData(SHEETS.PROVEEDORES, 0),
       companies: getData(SHEETS.EMPRESAS, 0),
-      types: getData(SHEETS.TIPOS, 0)
+      types:     getData(SHEETS.TIPOS, 0)
     };
   } catch (e) {
     console.error('Error en getAllData: ' + e);
@@ -158,9 +207,6 @@ function getAllData() {
   }
 }
 
-// ==========================================
-// 🔍 MÉTODO ESPECÍFICO PARA SUPPLIERS (getSuppliersByCompany)
-// ==========================================
 function getSuppliersByCompany(companyId) {
   try {
     const allSuppliers = getData(SHEETS.PROVEEDORES, 0);
@@ -171,30 +217,19 @@ function getSuppliersByCompany(companyId) {
   }
 }
 
-// ==========================================
-// 📍 MÉTODO PARA BÚSQUEDA DE CP (lookupPostalCode)
-// ==========================================
 function lookupPostalCode(cp) {
-  try {
-    // Simulación simple - en producción podrías usar una API
-    // Por ahora devolvemos array vacío para que el usuario escriba manualmente
-    return [];
-  } catch (e) {
-    console.error('Error en lookupPostalCode: ' + e);
-    return [];
-  }
+  try { return []; } catch (e) { console.error('Error en lookupPostalCode: ' + e); return []; }
 }
 
-// --- Dropdowns (ESPECÍFICO PARA PEDIDOS)
 function getDropdownData() {
   try {
     return {
-      empresas:     getData(SHEETS.EMPRESAS, 0).map(e => ({ id: e['Id_Empresa'],     name: e['Nombre Empresa'] })),
-      tipos:        getData(SHEETS.TIPOS, 0).map(t => ({ id: t['Id_Tipo'],           name: t['Tipo de Proveedor'] })),
+      empresas:     getData(SHEETS.EMPRESAS, 0).map(e => ({ id: e['Id_Empresa'], name: e['Nombre Empresa'] })),
+      tipos:        getData(SHEETS.TIPOS, 0).map(t => ({ id: t['Id_Tipo'], name: t['Tipo de Proveedor'] })),
       compradores:  getData(SHEETS.COMPRADORES, 0).map(c => ({ id: c['Id_Comprador'], name: c['Nombre Comprador'] })),
-      medios:       getData(SHEETS.MEDIOS_PEDIDO, 0).map(m => ({ id: m['Id_Medio'],   name: m['Medio de Pedido'] })),
-      zonas:        getData(SHEETS.ZONAS, 0).map(z => ({ id: z['Id_Zona'],           name: z['Nombre Zona'] })),
-      edificios:    getData(SHEETS.EDIFICIOS, 0).map(e => ({ id: e['Id_Edificio'],   name: e['Nombre Edificio'] })),
+      medios:       getData(SHEETS.MEDIOS_PEDIDO, 0).map(m => ({ id: m['Id_Medio'], name: m['Medio de Pedido'] })),
+      zonas:        getData(SHEETS.ZONAS, 0).map(z => ({ id: z['Id_Zona'], name: z['Nombre Zona'] })),
+      edificios:    getData(SHEETS.EDIFICIOS, 0).map(e => ({ id: e['Id_Edificio'], name: e['Nombre Edificio'] })),
       solicitantes: getData(SHEETS.SOLICITANTES, 0).map(s => ({ id: s['Id_Solicitante'], name: s['Nombre Solicitante'] }))
     };
   } catch (e) {
@@ -204,10 +239,10 @@ function getDropdownData() {
 }
 
 // ==========================================
-// 🧠 Link helpers y caché
+// 🔗 Link helpers y caché (para búsqueda/export)
 // ==========================================
-const LINKED_COLUMNS = ['GDC_PINV', 'SC', 'OC', 'Albarán', 'Factura', 'Presupuesto'];
-const CACHE_TTL_SECONDS = 300; // 5 minutos
+const LINKED_COLUMNS     = ['GDC_PINV', 'SC', 'OC', 'Albarán', 'Factura', 'Presupuesto'];
+const CACHE_TTL_SECONDS  = 300; // 5 minutos
 
 function getFirstLinkFromRichText(rt) {
   if (!rt) return null;
@@ -226,6 +261,7 @@ function getFirstLinkFromRichText(rt) {
   } catch (e) {}
   return null;
 }
+
 function buildCacheKey(filters, page, pageSize) {
   try {
     const f = JSON.stringify(filters || {});
@@ -236,23 +272,24 @@ function buildCacheKey(filters, page, pageSize) {
 }
 
 // ==========================================
-// 🔎 BÚSQUEDA con caché y enlaces por página
+// 🔎 BÚSQUEDA con caché y enlaces por página (orders_list.html)
 // ==========================================
 function searchOrders(filters, page, pageSize) {
-  page = page || 1;
+  page     = page     || 1;
   pageSize = pageSize || 50;
   pageSize = Math.min(Number(pageSize) || 20, 20); // tope 20 en servidor
 
   const cache = CacheService.getScriptCache();
   const cacheKey = buildCacheKey(filters, page, pageSize);
   const cached = cache.get(cacheKey);
-  if (cached) { try { return JSON.parse(cached); } catch (e) {} }
+  if (cached) {
+    try { return JSON.parse(cached); } catch (e) {}
+  }
 
   try {
-    const sheet    = getSheet(SHEETS.PEDIDOS);
-    const lastRow  = sheet.getLastRow();
-    const lastCol  = sheet.getLastColumn();
-
+    const sheet   = getSheet(SHEETS.PEDIDOS);
+    const lastRow = sheet.getLastRow();
+    const lastCol = sheet.getLastColumn();
     if (lastRow < 2) {
       const res = { orders: [], pagination: { total: 0, page: 1, totalPages: 0, pageSize } };
       cache.put(cacheKey, JSON.stringify(res), CACHE_TTL_SECONDS);
@@ -261,11 +298,11 @@ function searchOrders(filters, page, pageSize) {
 
     const headers  = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
     const numRows  = lastRow - 1;
-    const data     = sheet.getRange(2, 1, numRows, lastCol);
-    const values   = data.getValues();
-    const formulas = data.getFormulas();
+    const range    = sheet.getRange(2, 1, numRows, lastCol);
+    const values   = range.getValues();
+    const formulas = range.getFormulas();
 
-    // Base + HYPERLINK(...)
+    // Construcción base (+ enlaces detectados por fórmula HYPERLINK)
     let allOrders = values.map((row, r) => {
       const obj = { _rowIndex: r + 2 };
       for (var c = 0; c < headers.length; c++) {
@@ -280,13 +317,13 @@ function searchOrders(filters, page, pageSize) {
       return obj;
     });
 
-    // Filtros
-    const term        = (filters.search       || '').toLowerCase().trim();
-    const supplier    = (filters.supplier     || '').toLowerCase().trim();
-    const servido     = (filters.servido      || '').toLowerCase().trim();
-    const autorizado  = (filters.autorizado   || '').toLowerCase().trim();
-    const solicitante = (filters.solicitante  || '').toLowerCase().trim();
-    const comprador   = (filters.comprador    || '').toLowerCase().trim();
+    // Filtros (como en tu versión)
+    const term        = (filters.search      || '').toLowerCase().trim();
+    const supplier    = (filters.supplier    || '').toLowerCase().trim();
+    const servido     = (filters.servido     || '').toLowerCase().trim();
+    const autorizado  = (filters.autorizado  || '').toLowerCase().trim();
+    const solicitante = (filters.solicitante || '').toLowerCase().trim();
+    const comprador   = (filters.comprador   || '').toLowerCase().trim();
 
     const filtered = allOrders.filter(order => {
       if (term) {
@@ -305,17 +342,16 @@ function searchOrders(filters, page, pageSize) {
     filtered.sort((a, b) => new Date(b['Fecha Pedido'] || 0) - new Date(a['Fecha Pedido'] || 0));
 
     // Paginación
-    const total      = filtered.length;
-    const totalPages = Math.max(1, Math.ceil(total / pageSize));
-    const start      = (page - 1) * pageSize;
-    const end        = start + pageSize;
+    const total       = filtered.length;
+    const totalPages  = Math.max(1, Math.ceil(total / pageSize));
+    const start       = (page - 1) * pageSize;
+    const end         = start + pageSize;
     const pagedOrders = filtered.slice(start, end);
 
-    // Enlaces RichText SOLO para la página actual
+    // Completar enlaces RichText SOLO para la página actual
     LINKED_COLUMNS.forEach(colName => {
       const colIndex = headers.indexOf(colName);
       if (colIndex === -1) return;
-
       const cells = [];
       const a1ToOrder = {};
       for (var i = 0; i < pagedOrders.length; i++) {
@@ -335,7 +371,7 @@ function searchOrders(filters, page, pageSize) {
           var rt = null;
           try { rt = r.getRichTextValue(); } catch (e) {}
           var url = getFirstLinkFromRichText(rt);
-          if (url) { a1ToOrder[a1]['Enlace_' + colName] = url; }
+          if (url) a1ToOrder[a1]['Enlace_' + colName] = url;
         }
       }
     });
@@ -353,15 +389,14 @@ function searchOrders(filters, page, pageSize) {
 }
 
 // ==========================================
-// ✅ Exportaciones (con alcance: visible / todo)
+// ✅ Exportaciones (CSV + Sheet)
 // ==========================================
 function exportOrdersCSV(filters, scope) {
   scope = (scope || 'visible').toLowerCase(); // 'visible' | 'all'
-
   try {
-    const sheet    = getSheet(SHEETS.PEDIDOS);
-    const lastRow  = sheet.getLastRow();
-    const lastCol  = sheet.getLastColumn();
+    const sheet   = getSheet(SHEETS.PEDIDOS);
+    const lastRow = sheet.getLastRow();
+    const lastCol = sheet.getLastColumn();
     if (lastRow < 2) throw new Error('No hay datos');
 
     const headers  = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
@@ -385,12 +420,12 @@ function exportOrdersCSV(filters, scope) {
     });
 
     // Filtros (igual que searchOrders)
-    const term        = (filters.search       || '').toLowerCase().trim();
-    const supplier    = (filters.supplier     || '').toLowerCase().trim();
-    const servido     = (filters.servido      || '').toLowerCase().trim();
-    const autorizado  = (filters.autorizado   || '').toLowerCase().trim();
-    const solicitante = (filters.solicitante  || '').toLowerCase().trim();
-    const comprador   = (filters.comprador    || '').toLowerCase().trim();
+    const term        = (filters.search      || '').toLowerCase().trim();
+    const supplier    = (filters.supplier    || '').toLowerCase().trim();
+    const servido     = (filters.servido     || '').toLowerCase().trim();
+    const autorizado  = (filters.autorizado  || '').toLowerCase().trim();
+    const solicitante = (filters.solicitante || '').toLowerCase().trim();
+    const comprador   = (filters.comprador   || '').toLowerCase().trim();
 
     const filtered = allOrders.filter(order => {
       if (term) {
@@ -408,50 +443,50 @@ function exportOrdersCSV(filters, scope) {
     // Orden por fecha desc
     filtered.sort((a, b) => new Date(b['Fecha Pedido'] || 0) - new Date(a['Fecha Pedido'] || 0));
 
-    // Completar enlaces RichText para columnas LINKED_COLUMNS en TODA la selección filtrada
+    // Completar enlaces RichText para columnas LINKED_COLUMNS en toda la selección filtrada
     LINKED_COLUMNS.forEach(colName => {
       const colIndex = headers.indexOf(colName);
       if (colIndex === -1) return;
       const rtCol = sheet.getRange(2, colIndex + 1, lastRow - 1, 1).getRichTextValues();
       filtered.forEach(o => {
         if (!o['Enlace_' + colName]) {
-          const rt = rtCol[o['_rowIndex'] - 2][0];
+          const rt  = rtCol[o['_rowIndex'] - 2][0];
           const url = getFirstLinkFromRichText(rt);
           if (url) o['Enlace_' + colName] = url;
         }
       });
     });
 
-    // ----- Construcción CSV según scope -----
+    // Construcción CSV según scope
     let outHeaders, buildRow;
     if (scope === 'all') {
-      // Todas las columnas originales + columnas Enlace_ para las LINKED_COLUMNS
       const linkCols = LINKED_COLUMNS.map(c => 'Enlace_' + c);
       outHeaders = headers.concat(linkCols);
-      buildRow = (o) => outHeaders.map(h => o[h] || '');
+      buildRow = o => outHeaders.map(h => o[h] || '');
     } else {
-      // Solo visibles en la lista + sus enlaces
       outHeaders = [
-        'Fecha Pedido', 'Proveedor', 'Descripción', 'Solicitante',
-        'GDC_PINV', 'Enlace_GDC_PINV',
-        'SC', 'Enlace_SC',
-        'OC', 'Enlace_OC',
-        'Albarán', 'Enlace_Albarán',
-        'Factura', 'Enlace_Factura',
-        'Presupuesto', 'Enlace_Presupuesto',
-        'Servido', 'Autorizado', 'Importe'
+        'Fecha Pedido','Proveedor','Descripción','Solicitante',
+        'GDC_PINV','Enlace_GDC_PINV','SC','Enlace_SC','OC','Enlace_OC',
+        'Albarán','Enlace_Albarán','Factura','Enlace_Factura','Presupuesto','Enlace_Presupuesto',
+        'Servido','Autorizado','Importe'
       ];
-      buildRow = (o) => [
+      buildRow = o => [
         o['Fecha Pedido'] || '',
         o['Proveedor'] || '',
         o['Descripción'] || '',
         o['Solicitante'] || '',
-        o['GDC_PINV'] || '',        o['Enlace_GDC_PINV'] || '',
-        o['SC'] || '',              o['Enlace_SC'] || '',
-        o['OC'] || '',              o['Enlace_OC'] || '',
-        o['Albarán'] || '',         o['Enlace_Albarán'] || '',
-        o['Factura'] || '',         o['Enlace_Factura'] || '',
-        o['Presupuesto'] || '',     o['Enlace_Presupuesto'] || '',
+        o['GDC_PINV'] || '',
+        o['Enlace_GDC_PINV'] || '',
+        o['SC'] || '',
+        o['Enlace_SC'] || '',
+        o['OC'] || '',
+        o['Enlace_OC'] || '',
+        o['Albarán'] || '',
+        o['Enlace_Albarán'] || '',
+        o['Factura'] || '',
+        o['Enlace_Factura'] || '',
+        o['Presupuesto'] || '',
+        o['Enlace_Presupuesto'] || '',
         o['Servido'] || '',
         o['Autorizado'] || '',
         o['Importe'] || ''
@@ -470,9 +505,9 @@ function exportOrdersCSV(filters, scope) {
     lines.push(outHeaders.map(csvEscape).join(','));
     filtered.forEach(o => lines.push(buildRow(o).map(csvEscape).join(',')));
 
-    const csv = lines.join('\n');
-    const base64 = Utilities.base64Encode(csv, Utilities.Charset.UTF_8);
-    const stamp = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyyMMdd_HHmm");
+    const csv     = lines.join('\n');
+    const base64  = Utilities.base64Encode(csv, Utilities.Charset.UTF_8);
+    const stamp   = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyyMMdd_HHmm");
     const fileLabel = scope === 'all' ? 'ALL' : 'VISIBLE';
     return { filename: `Pedidos_export_${fileLabel}_${stamp}.csv`, mimeType: 'text/csv', base64 };
 
@@ -481,12 +516,11 @@ function exportOrdersCSV(filters, scope) {
   }
 }
 
-// Export a Google Sheets (crea hoja y vuelca el CSV generado)
 function exportOrdersToSheet(filters, scope) {
   try {
     const res = exportOrdersCSV(filters, scope); // reutilizamos lógica
-    const ss = SpreadsheetApp.create(`Pedidos Export ${scope === 'all' ? 'ALL' : 'VISIBLE'} ${Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyyMMdd_HHmm")}`);
-    const sh = ss.getActiveSheet();
+    const ss  = SpreadsheetApp.create(`Pedidos Export ${scope === 'all' ? 'ALL' : 'VISIBLE'} ${Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyyMMdd_HHmm")}`);
+    const sh  = ss.getActiveSheet();
 
     // Parsear CSV para setValues
     const csvString = Utilities.newBlob(Utilities.base64Decode(res.base64)).getDataAsString('UTF-8');
@@ -496,7 +530,8 @@ function exportOrdersToSheet(filters, scope) {
       for (let i = 0; i < line.length; i++) {
         const ch = line[i];
         if (ch === '"') {
-          if (inQ && line[i + 1] === '"') { cur += '"'; i++; } else { inQ = !inQ; }
+          if (inQ && line[i + 1] === '"') { cur += '"'; i++; }
+          else { inQ = !inQ; }
         } else if (ch === ',' && !inQ) { out.push(cur); cur = ''; }
         else { cur += ch; }
       }
@@ -507,14 +542,13 @@ function exportOrdersToSheet(filters, scope) {
     sh.clear();
     sh.getRange(1, 1, rows.length, rows[0].length).setValues(rows);
     return { url: ss.getUrl() };
-
   } catch (e) {
     throw new Error('Export Sheet: ' + e.message);
   }
 }
 
 // ==========================================
-// 🛡️ Autorizaciones
+// 🛡️ Autorizaciones (pendientes / seleccionados / todos)
 // ==========================================
 function getPendingOrders() {
   try {
@@ -523,6 +557,7 @@ function getPendingOrders() {
       const auth = String(order['Autorizado'] || '').trim().toLowerCase();
       return auth !== 'sí' && auth !== 'si' && auth !== 'true' && auth !== 'yes';
     });
+    // Orden ascendente por fecha (estilo impresión)
     pending.sort((a, b) => new Date(a['Fecha Pedido'] || 0) - new Date(b['Fecha Pedido'] || 0));
     return pending;
   } catch (e) {
@@ -530,35 +565,121 @@ function getPendingOrders() {
     return [];
   }
 }
-function markOrdersAsAuthorized(orderIds) {
-  try {
-    const sheet = getSheet(SHEETS.PEDIDOS);
-    const data  = sheet.getDataRange().getValues();
-    const headers  = data[0];
-    const idIndex  = headers.indexOf('Id_Pedido');
-    const authIndex= headers.indexOf('Autorizado');
-    if (idIndex === -1 || authIndex === -1) throw new Error('Columnas no encontradas');
 
-    const idsToUpdate = new Set(orderIds.map(String));
-    let count = 0;
-    const VALOR_AUTORIZADO = 'Sí';
+// Núcleo que marca "Sí" en Autorizado para una lista de IDs.
+function _markOrdersAsAuthorizedCore(orderIds) {
+  const sheet   = getSheet(SHEETS.PEDIDOS);
+  const data    = sheet.getDataRange().getValues();
+  const headers = data[0];
+  const idIndex   = headers.indexOf('Id_Pedido');
+  const authIndex = headers.indexOf('Autorizado');
+  if (idIndex === -1 || authIndex === -1) throw new Error('Columnas no encontradas');
 
-    for (let i = 1; i < data.length; i++) {
-      const rowId = String(data[i][idIndex]).trim();
-      if (idsToUpdate.has(rowId)) {
-        sheet.getRange(i + 1, authIndex + 1).setValue(VALOR_AUTORIZADO);
-        count++;
-      }
+  const idsToUpdate = new Set(orderIds.map(String));
+  let count = 0;
+  const VALOR_AUTORIZADO = 'Sí';
+
+  for (let i = 1; i < data.length; i++) {
+    const rowId = String(data[i][idIndex]).trim();
+    if (idsToUpdate.has(rowId)) {
+      sheet.getRange(i + 1, authIndex + 1).setValue(VALOR_AUTORIZADO);
+      count++;
     }
-    return { success: true, count };
-  } catch (e) {
-    console.error('Error en markOrdersAsAuthorized: ' + e.message);
-    throw new Error('Error al autorizar: ' + e.message);
   }
+  return { success: true, count };
+}
+
+// Autorizar SELECCIONADOS + auditoría
+function markOrdersAsAuthorized(orderIds, payload) {
+  const res = _markOrdersAsAuthorizedCore(orderIds);
+
+  try {
+    const all    = getData(SHEETS.PEDIDOS, 0);
+    const idsSet = new Set(orderIds.map(String));
+    const pedidos = all
+      .filter(p => idsSet.has(String(p['Id_Pedido'])))
+      .map(p => ({
+        id: String(p['Id_Pedido'] || ''),
+        proveedor: String(p['Proveedor'] || ''),
+        descripcion: String(p['Descripción'] || ''),
+        importe: p['Importe'] || ''
+      }));
+
+    const details = {
+      count: res.count,
+      firmas: (payload && (payload.firmas || payload.extras)) || '',
+      pedidos
+    };
+
+    logAudit({
+      action: 'AUTHORIZE_SELECTED',
+      page:   'authorizations',
+      details,
+      userAgent: (payload && payload.userAgent) || '',
+      extras:    (payload && payload.extras)    || ''
+    });
+  } catch (e) {
+    console.error('Audit fallback error: ' + e);
+  }
+
+  SpreadsheetApp.flush();
+  return res;
+}
+
+// Autorizar TODOS + auditoría
+function authorizeAllPendingOrders(payload) {
+  const pending = getPendingOrders();
+  const ids     = pending.map(o => String(o['Id_Pedido']));
+  const res     = _markOrdersAsAuthorizedCore(ids);
+
+  const details = {
+    count: res.count,
+    firmas: (payload && payload.firmas) || (payload && payload.extras) || '',
+    pedidos: pending.map(p => ({
+      id: String(p['Id_Pedido'] || ''),
+      proveedor: String(p['Proveedor'] || ''),
+      descripcion: String(p['Descripción'] || ''),
+      importe: p['Importe'] || ''
+    }))
+  };
+
+  logAudit({
+    action: 'AUTHORIZE_ALL',
+    page:   'authorizations',
+    details,
+    userAgent: (payload && payload.userAgent) || '',
+    extras:    (payload && payload.extras)    || ''
+  });
+
+  SpreadsheetApp.flush();
+  return res;
+}
+
+// Utilidades para autorizaciones
+function getPendingOrdersCount() { return getPendingOrders().length; }
+function getPendingOrdersBrief() {
+  return getPendingOrders().map(p => ({
+    id: String(p['Id_Pedido'] || ''),
+    proveedor: String(p['Proveedor'] || ''),
+    descripcion: String(p['Descripción'] || ''),
+    importe: p['Importe'] || ''
+  }));
+}
+function getOrdersBriefByIds(ids) {
+  const all = getData(SHEETS.PEDIDOS, 0);
+  const set = new Set((ids || []).map(String));
+  return all
+    .filter(p => set.has(String(p['Id_Pedido'])))
+    .map(p => ({
+      id: String(p['Id_Pedido'] || ''),
+      proveedor: String(p['Proveedor'] || ''),
+      descripcion: String(p['Descripción'] || ''),
+      importe: p['Importe'] || ''
+    }));
 }
 
 // ==========================================
-// ✏️ CRUD unitario (sin cambios funcionales relevantes)
+// ✏️ CRUD unitario
 // ==========================================
 function getOrderById(orderId) {
   try {
@@ -598,11 +719,10 @@ function getOrderById(orderId) {
       }
       if (link) order['Enlace_' + h] = link;
     });
-
     return order;
-  } catch (e) { 
+  } catch (e) {
     console.error('Error en getOrderById: ' + e);
-    return null; 
+    return null;
   }
 }
 
@@ -619,12 +739,14 @@ function updateOrderField(orderId, field, value) {
 
     sheet.getRange(result.getRow(), colIndex + 1).setValue(value);
 
-    if (field === 'Servido' && ['Sí', 'Si', 'SI'].includes(value)) {
+    if (field === 'Servido' && ['Sí','Si','SI'].includes(value)) {
       const dateIndex = headers.indexOf('Fecha Llegada');
       if (dateIndex !== -1) sheet.getRange(result.getRow(), dateIndex + 1).setValue(new Date());
     }
     return { success: true };
-  } catch (e) { throw e; }
+  } catch (e) {
+    throw e;
+  }
 }
 
 function saveRecord(sheetName, formObject) {
@@ -632,8 +754,7 @@ function saveRecord(sheetName, formObject) {
     const sheet   = getSheet(sheetName);
     const headers = getHeaders(sheetName);
     const idField = headers[0];
-
-    const isNew = !formObject[idField];
+    const isNew   = !formObject[idField];
     if (isNew) formObject[idField] = Utilities.getUuid();
 
     const row = headers.map(h => {
@@ -652,7 +773,9 @@ function saveRecord(sheetName, formObject) {
       sheet.getRange(result.getRow(), 1, 1, row.length).setValues([row]);
     }
     return { success: true, id: formObject[idField], isNew };
-  } catch (e) { throw new Error(e.message); }
+  } catch (e) {
+    throw new Error(e.message);
+  }
 }
 
 function deleteRecord(sheetName, id) {
@@ -662,7 +785,9 @@ function deleteRecord(sheetName, id) {
     const result = finder.findNext();
     if (result) { sheet.deleteRow(result.getRow()); return { success: true }; }
     throw new Error('Registro no encontrado');
-  } catch (e) { throw e; }
+  } catch (e) {
+    throw e;
+  }
 }
 
 function uploadFileToDrive(data, filename, mimetype) {
@@ -672,5 +797,65 @@ function uploadFileToDrive(data, filename, mimetype) {
     var file   = folder.createFile(blob);
     file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
     return { success: true, url: file.getUrl() };
-  } catch (e) { throw new Error(e.message); }
+  } catch (e) {
+    throw new Error(e.message);
+  }
+}
+
+// ==========================================
+// 📑 AUDITORÍA
+// ==========================================
+const AUDIT_SHEET   = 'Auditoria'; // nombre exacto de la pestaña
+const AUDIT_HEADERS = ['Timestamp','UserEmail','Action','Page','DetailsJSON','UserAgent','Extras'];
+
+function getAuditSheet_() {
+  const sh = getSheet(AUDIT_SHEET);
+  const lastRow = sh.getLastRow();
+  const lastCol = sh.getLastColumn();
+
+  if (lastRow === 0) {
+    sh.appendRow(AUDIT_HEADERS);
+  } else {
+    const headers = sh.getRange(1,1,1,Math.max(lastCol, AUDIT_HEADERS.length)).getValues()[0];
+    const have = headers.slice(0, AUDIT_HEADERS.length).join('|');
+    const want = AUDIT_HEADERS.join('|');
+    if (have !== want) {
+      sh.getRange(1,1,1,AUDIT_HEADERS.length).setValues([AUDIT_HEADERS]);
+    }
+  }
+  return sh;
+}
+
+function logAudit(entry) {
+  const lock = LockService.getDocumentLock();
+  lock.waitLock(30000); // Apps Script: sin separadores numéricos
+  try {
+    const sh = getAuditSheet_();
+    const userEmail = (Session.getActiveUser().getEmail() || Session.getEffectiveUser().getEmail() || '');
+    const row = [
+      new Date(),
+      userEmail,
+      entry.action || '',
+      entry.page   || '',
+      typeof entry.details === 'string' ? entry.details : JSON.stringify(entry.details || {}),
+      entry.userAgent || '',
+      entry.extras || ''
+    ];
+    sh.appendRow(row);
+    return { success: true };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+// ===== Utilidad de prueba (opcional) =====
+function testAuditWrite() {
+  const res = logAudit({
+    action: 'TEST_WRITE',
+    page: 'authorizations',
+    details: { ping: true },
+    userAgent: 'ManualRun',
+    extras: 'Prueba manual'
+  });
+  Logger.log(res);
 }

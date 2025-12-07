@@ -3,721 +3,750 @@
 
 <head>
     <base target="_top">
-    <?!= include('css'); ?>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Autorizaciones de Pedidos</title>
 
-    <!-- Fuentes correctamente enlazadas -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
-
-    <script>
-        const APP_URL = "<?= appUrl ?>";
-    </script>
+    <!-- ✅ Carga correcta de Material Icons -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons&display=swap">
 
     <style>
         :root {
-            --bg-color: #f3f4f6;
-            --primary-color: #2563eb;
-            --border-color: #ccc;
-
-            /* alturas visuales del header en pantalla */
-            --header-row1-height: 35px;
-            --header-row2-height: 25px;
-
-            /* colores de la tabla */
-            --thead-bg: #d19f6a;
-            /* naranja cabecera */
-            --zebra-bg: #fcefe3;
-            /* zebra */
-        }
-
-        /* ===== BASE / LAYOUT ===== */
-        html,
-        body {
-            height: 100%;
-            min-height: 0;
+            --primary: #1e67d2;
+            --dark: #3c3c3c;
+            --muted: #666;
+            --border: #d9d9d9;
+            --bg: #fff;
+            --shadow: rgba(0, 0, 0, 0.25);
+            --thead-bg: #cfa06a;
+            --thead-text: #0b1a30;
+            --thead-border: #0b1a30;
         }
 
         body {
-            background-color: var(--bg-color);
-            padding: 20px;
-            font-family: 'Inter', sans-serif;
-            display: flex;
-            flex-direction: column;
-            min-height: 0;
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
+            font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+            margin: 16px;
+            color: #222;
         }
 
-        .toolbar {
-            max-width: 297mm;
-            margin: 0 auto 20px auto;
+        /* Barra superior */
+        header {
             display: flex;
-            justify-content: space-between;
+            gap: 12px;
             align-items: center;
-            flex: 0 0 auto;
+            flex-wrap: wrap;
+            margin-bottom: 14px;
         }
 
-        .btn-print {
-            background: #374151;
-            color: #fff;
-            border: none;
-        }
-
-        .btn-primary,
-        .btn-secondary,
-        .btn-print {
-            padding: 0.6rem 1.25rem;
-            border-radius: 0.5rem;
-            font-weight: 500;
-            cursor: pointer;
-            font-size: 0.9rem;
+        .icon-btn {
             display: inline-flex;
             align-items: center;
-            gap: 0.5rem;
-        }
-
-        .btn-secondary {
-            background: #fff;
-            border: 1px solid #e5e7eb;
-            color: #374151;
-        }
-
-        .btn-primary {
-            background: #2563eb;
-            color: #fff;
-            border: none;
-        }
-
-        .btn-primary:hover {
-            opacity: .9
-        }
-
-        .btn-primary:disabled {
-            background: #9ca3af;
-            cursor: not-allowed;
-        }
-
-        .paper-container {
-            background: #fff;
-            max-width: 297mm;
-            margin: 0 auto;
-            padding: 20mm;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, .1);
-            display: flex;
-            flex-direction: column;
-            flex: 1 1 auto;
-            min-height: 0;
-        }
-
-        h1 {
-            font-size: 24px;
-            font-weight: 700;
-            text-transform: uppercase;
-            color: #000;
-            border-bottom: 2px solid #2563eb;
-            padding-bottom: 10px;
-            margin-bottom: 20px;
-            text-align: center;
-            flex: 0 0 auto;
-        }
-
-        .header-row {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 20px;
-            font-weight: 600;
-            flex: 0 0 auto;
-        }
-
-        .signature-box-container {
-            display: flex;
-            justify-content: flex-end;
-            margin-bottom: 16px;
-            flex: 0 0 auto;
-        }
-
-        .signature-box {
-            width: 250px;
-            height: 100px;
-            border: 1px solid #ccc;
-            background-color: #f3f4f6;
-        }
-
-        .signature-label {
-            font-weight: 700;
+            gap: 8px;
+            border-radius: 999px;
+            padding: 8px 12px;
+            border: 1px solid transparent;
+            cursor: pointer;
             font-size: 14px;
-            margin-bottom: 5px;
-            display: block;
-            text-align: right;
+            transition: transform .05s ease-in-out;
+            background: #f7f7f7;
+            color: #333;
         }
 
-        /* ===== TABLA: HEADER FIJO + CUERPO SCROLL ===== */
-        .table-wrapper {
-            border: 1px solid var(--border-color);
-            flex: 1 1 auto;
-            min-height: 0;
-            display: flex;
-            flex-direction: column;
+        .icon-btn .material-icons {
+            font-size: 18px;
+        }
+
+        .icon-btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .icon-btn.back {
+            background: #f0f2f6;
+            color: #0b1a30;
+            border-color: #e6e8ed;
+        }
+
+        .icon-btn.primary {
+            background: var(--primary);
+            color: #fff;
+        }
+
+        .icon-btn.dark {
+            background: var(--dark);
+            color: #fff;
+        }
+
+        .badge {
+            margin-left: 8px;
+            min-width: 20px;
+            padding: 0 6px;
+            border-radius: 999px;
             background: #fff;
-        }
-
-        .header-table {
-            width: 100%;
-            table-layout: fixed;
-            border-collapse: separate;
-            border-spacing: 0;
-            font-size: 11px;
-            flex: 0 0 auto;
-        }
-
-        .body-scroll {
-            flex: 1 1 auto;
-            min-height: 0;
-            overflow: auto;
-            -webkit-overflow-scrolling: touch;
-            /* Ajusta según tu layout */
-            max-height: calc(100vh - 240px);
-            /* Alternativa fija: height:550px; */
-        }
-
-        .body-table {
-            width: 100%;
-            table-layout: fixed;
-            border-collapse: separate;
-            border-spacing: 0;
-            font-size: 11px;
-        }
-
-        /* Colgroup - AJUSTE DE ANCHOS */
-        .data-col-1 {
-            width: 11%
-        }
-
-        /* Proveedor */
-
-        .data-col-2 {
-            width: 20%
-        }
-
-        /* Descripción */
-
-        .data-col-3 {
-            width: 7%
-        }
-
-        /* Fecha Pedido */
-
-        .data-col-4 {
-            width: 9%
-        }
-
-        /* Comprador */
-
-        .data-col-5 {
-            width: 8%
-        }
-
-        /* Medio pedido */
-
-        .data-col-6 {
-            width: 8%
-        }
-
-        /* Edificio */
-
-        .data-col-7 {
-            width: 9%
-        }
-
-        /* Solicitante */
-
-        .data-col-8 {
-            width: 6%
-        }
-
-        /* GDC */
-
-        .data-col-9 {
-            width: 5%
-        }
-
-        /* AUTORIZADO SI */
-
-        .data-col-10 {
-            width: 5%
-        }
-
-        /* AUTORIZADO NO */
-
-        .data-col-11 {
-            width: 6%
-        }
-
-        /* Importe s/iva - MÁS ANCHO */
-
-        /* Celdas base */
-        .header-table th,
-        .body-table td,
-        .body-table thead th {
-            border-bottom: 1px solid var(--border-color);
-            border-right: 1px solid var(--border-color);
-            padding: 4px 8px;
-            background: #fff;
-            box-sizing: border-box;
-        }
-
-        .header-table th:last-child,
-        .body-table td:last-child,
-        .body-table thead th:last-child {
-            border-right: none;
-        }
-
-        /* Cabeceras (pantalla) */
-        .header-table th,
-        .body-table thead th {
-            background-color: var(--thead-bg);
-            color: #000;
-            font-weight: 700;
+            color: #1e67d2;
+            font-weight: 600;
+            font-size: 12px;
+            line-height: 20px;
             text-align: center;
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
-        }
-
-        .header-table thead tr:first-child th,
-        .body-table thead tr:first-child th {
-            height: var(--header-row1-height);
-            vertical-align: middle;
-            border-bottom: 1px solid #7c5e3f;
-        }
-
-        .header-table thead tr:nth-child(2) th,
-        .body-table thead tr:nth-child(2) th {
-            height: var(--header-row2-height);
-            vertical-align: middle;
-            border-bottom: 1px solid #7c5e3f;
-        }
-
-        /* Zebra */
-        .body-table td {
-            z-index: 1;
-        }
-
-        .body-table tr:nth-child(even) td {
-            background-color: var(--zebra-bg);
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
-        }
-
-        .text-center {
-            text-align: center;
-        }
-
-        .text-right {
-            text-align: right;
-        }
-
-        /* Oculto en pantalla, visible como cabecera repetida en impresión */
-        .print-only {
             display: none;
         }
 
-        /* ===== MODAL ===== */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, .5);
+        h2 {
+            margin: 0 0 10px;
+            text-transform: uppercase;
+            letter-spacing: .3px;
+            font-weight: 700;
+        }
+
+        .meta {
+            color: var(--muted);
+            font-size: .95em;
+            margin: 2px 0 10px;
+        }
+
+        .meta strong {
+            color: #222;
+        }
+
+        .bar {
             display: flex;
+            gap: 8px;
             align-items: center;
-            justify-content: center;
-            z-index: 1000;
-            opacity: 0;
-            visibility: hidden;
-            transition: all .3s;
+            flex-wrap: wrap;
+            margin: 6px 0 8px;
         }
 
-        .modal-overlay.active {
-            opacity: 1;
-            visibility: visible;
+        label.inline {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
         }
 
-        .modal-card {
-            background: #fff;
-            width: 90%;
-            max-width: 400px;
-            border-radius: 12px;
-            padding: 24px;
+        /* Tabla estilo impresión */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 8px;
+        }
+
+        thead th {
+            background: var(--thead-bg);
+            color: var(--thead-text);
+            font-weight: 600;
+            border-bottom: 2px solid var(--thead-border);
+            border-top: 2px solid var(--thead-border);
+            padding: 8px 6px;
+        }
+
+        tbody td {
+            border: 1px solid var(--border);
+            padding: 6px;
+            font-size: 13px;
+            vertical-align: middle;
+        }
+
+        td.num {
+            text-align: right;
+            white-space: nowrap;
+        }
+
+        td.center {
             text-align: center;
         }
 
-        .modal-icon {
-            width: 48px;
-            height: 48px;
-            background-color: #e0f2fe;
-            color: #0284c7;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 16px;
+        .empty {
+            padding: 12px;
+            background: #fafafa;
+            border: 1px dashed var(--border);
+            border-radius: 8px;
+            margin-top: 8px;
         }
 
-        .modal-actions {
-            display: flex;
-            gap: 12px;
-            justify-content: center;
-            margin-top: 20px;
+        /* Modal “mensaje emergente” */
+        .backdrop {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.30);
+            backdrop-filter: blur(1px);
+            z-index: 2000;
         }
 
-        .btn-modal {
-            padding: 10px 20px;
-            border-radius: 6px;
-            font-weight: 500;
+        .backdrop.show {
+            display: block;
+        }
+
+        .dialog {
+            display: none;
+            position: fixed;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: min(640px, 92vw);
+            max-height: 85vh;
+            overflow: auto;
+            background: var(--bg);
+            border-radius: 12px;
+            box-shadow: 0 10px 32px var(--shadow);
+            padding: 16px;
+            z-index: 2001;
+        }
+
+        .dialog.show {
+            display: block;
+        }
+
+        .dialog h3 {
+            margin: 0 0 8px;
+            font-weight: 700;
+        }
+
+        .dialog .subtitle {
+            color: var(--muted);
+            margin-bottom: 12px;
+            font-size: 14px;
+        }
+
+        .dialog .row {
+            margin: 8px 0;
+        }
+
+        .dialog input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+        }
+
+        .dialog .actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 14px;
+            flex-wrap: wrap;
+        }
+
+        .dialog .btn {
+            border: 0;
+            padding: 10px 14px;
+            border-radius: 8px;
             cursor: pointer;
-            border: none;
-            flex: 1;
+            font-size: 13px;
         }
 
-        .btn-cancel {
-            background: #fff;
-            border: 1px solid #ddd;
-        }
-
-        .btn-confirm {
-            background: #2563eb;
+        .dialog .btn.primary {
+            background: var(--primary);
             color: #fff;
         }
 
-        /* ===== IMPRESIÓN (A4 Landscape a todo ancho, colores y header repetido) ===== */
-        * {
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
+        .dialog .btn.secondary {
+            background: #eee;
+            color: #333;
         }
 
-        @media print {
-            @page {
-                size: A4 landscape;
-                margin: 8mm;
-            }
+        .dialog .btn[disabled] {
+            opacity: .6;
+            cursor: not-allowed;
+        }
 
-            /* márgenes pequeños */
+        .dialog .material-icons {
+            font-size: 20px;
+            vertical-align: middle;
+            margin-right: 6px;
+        }
 
-            html,
-            body {
-                height: auto;
-            }
+        details {
+            margin-top: 6px;
+        }
 
-            body,
-            .paper-container {
-                margin: 0;
-                padding: 0;
-                width: 100%;
-                max-width: none;
-                box-shadow: none;
-                display: block;
-            }
+        ul {
+            margin: 8px 0 0;
+            padding-left: 18px;
+        }
 
-            /* Reduce padding interno para aprovechar el ancho */
-            .paper-container {
-                padding: 4mm 6mm;
-            }
+        .muted {
+            color: var(--muted);
+        }
 
-            /* Oculta elementos no imprimibles */
-            .toolbar,
-            .modal-overlay {
-                display: none !important;
-            }
+        /* Overlay “Procesando…” + Toast */
+        .busy {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 2100;
+            background: rgba(255, 255, 255, 0.85);
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            font-size: 14px;
+            color: #222;
+        }
 
-            /* Sin scroll: imprime todo */
-            .body-scroll {
-                overflow: visible !important;
-                max-height: none !important;
-                height: auto !important;
-            }
+        .busy.show {
+            display: flex;
+        }
 
-            /* Aprovecha el ancho total y bordes definidos */
-            .table-wrapper {
-                border: none;
-            }
+        .spinner {
+            width: 24px;
+            height: 24px;
+            border: 3px solid #ddd;
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 0.9s linear infinite;
+            margin: 8px auto;
+        }
 
-            .header-table,
-            .body-table {
-                table-layout: fixed;
-                width: 100%;
-                border-collapse: collapse;
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
             }
+        }
 
-            /* Repite cabecera en cada página impresa:
-         - Oculta la tabla de encabezado fija
-         - Muestra el thead duplicado de la tabla del cuerpo */
-            .header-table {
-                display: none !important;
-            }
+        .toast {
+            position: fixed;
+            left: 50%;
+            transform: translateX(-50%);
+            bottom: 16px;
+            z-index: 2200;
+            background: #333;
+            color: #fff;
+            padding: 10px 14px;
+            border-radius: 6px;
+            font-size: 13px;
+            display: none;
+        }
 
-            .print-only {
-                display: table-header-group !important;
-            }
-
-            /* Reafirma colores por si el motor intenta desaturar */
-            .body-table thead th {
-                background-color: var(--thead-bg) !important;
-                color: #000 !important;
-            }
-
-            .body-table tr:nth-child(even) td {
-                background-color: var(--zebra-bg) !important;
-            }
-
-            /* (Opcional) grosor de bordes para papel */
-            .body-table thead th,
-            .body-table td {
-                border-width: 1px;
-                border-style: solid;
-            }
+        .toast.show {
+            display: block;
         }
     </style>
 </head>
 
 <body>
-    <div class="toolbar">
-        <button onclick="goBack()" class="btn-secondary">
-            <span class="material-icons-round">arrow_back</span> Volver
+
+    <!-- Barra superior -->
+    <header>
+        <button class="icon-btn back" id="btnBack">
+            <span class="material-icons" aria-hidden="true">arrow_back</span>
+            <span>Volver</span>
         </button>
-        <div style="display:flex;gap:10px;">
-            <button id="btn-main-auth" onclick="openModal()" class="btn-primary" disabled>
-                <span class="material-icons-round">done_all</span> Marcar Todo Autorizado
+
+        <button class="icon-btn primary" id="btnOpenAuthorize">
+            <span class="material-icons" aria-hidden="true">done_all</span>
+            <span>Autorizar Pedidos</span>
+            <span id="pendingBadge" class="badge"></span>
+        </button>
+
+        <button class="icon-btn dark" id="btnPrint">
+            <span class="material-icons" aria-hidden="true">print</span>
+            <span>Imprimir</span>
+        </button>
+    </header>
+
+    <h2>Autorizaciones de Pedidos</h2>
+
+    <div class="meta">
+        <div><strong>FECHA:</strong> <span id="hoy"></span></div>
+        <div><strong>Firma/s autorizada/s:</strong> <span class="muted">(se solicitarán al confirmar)</span></div>
+    </div>
+
+    <!-- Selección y totales -->
+    <div class="bar">
+        <label class="inline"><input type="checkbox" id="chkAll"> Seleccionar todo (columna “SI”)</label>
+        <div class="muted" style="margin-left:auto;">Pendientes: <strong><span id="lblTotal">0</span></strong> —
+            Seleccionados: <strong><span id="lblSel">0</span></strong></div>
+    </div>
+
+    <div id="emptyBox" class="empty" style="display:none;">No hay pedidos pendientes de autorización.</div>
+
+    <!-- Tabla estilo original (AUTORIZADO con SI/NO) -->
+    <table id="tbl" aria-label="Pedidos pendientes">
+        <thead>
+            <tr>
+                <th>Proveedor</th>
+                <th>Descripción</th>
+                <th>Fecha Pedido</th>
+                <th>Comprador</th>
+                <th>Medio pedido</th>
+                <th>Edificio</th>
+                <th>Solicitante</th>
+                <th>GDC</th>
+                <th colspan="2" class="center">AUTORIZADO</th>
+                <th class="num">Importe s/iva</th>
+            </tr>
+            <tr>
+                <th colspan="8"></th>
+                <th class="center">SI</th>
+                <th class="center">NO</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody id="tbody">
+            <!-- Se rellena por JS -->
+        </tbody>
+    </table>
+
+    <!-- Modal “¿Autorizar Pedidos?” -->
+    <div id="backdrop" class="backdrop" aria-hidden="true"></div>
+    <div id="dialog" class="dialog" role="dialog" aria-modal="true" aria-labelledby="dlgTitle">
+        <h3 id="dlgTitle"><span class="material-icons" aria-hidden="true">verified_user</span> ¿Autorizar Pedidos?</h3>
+        <div class="subtitle">
+            <div>Seleccionados: <strong><span id="cntSel">0</span></strong> / Pendientes: <strong><span
+                        id="cntTot">0</span></strong></div>
+            <div>Se marcarán como autorizados un total de <strong><span id="cntConfirm">0</span></strong> pedido(s).
+            </div>
+            <div><em>Esta acción quedará registrada.</em></div>
+        </div>
+
+        <div class="row">
+            <label for="firmas"><strong>Firma/s autorizada/s</strong></label>
+            <input id="firmas" type="text" placeholder="Nombre(s) de quien autoriza">
+        </div>
+
+        <details>
+            <summary>Ver detalle de la selección</summary>
+            <ul id="selList">
+                <li class="muted">Sin selección.</li>
+            </ul>
+        </details>
+
+        <div class="actions">
+            <!-- Contador + Total integrados en el botón -->
+            <button class="btn primary" id="btnConfirmSelected" disabled>
+                Autorizar seleccionados (<span id="btnSelCount">0</span>) — Total: <span id="btnSelTotal">€0,00</span>
             </button>
-            <button onclick="window.print()" class="btn-print">
-                <span class="material-icons-round">print</span> Imprimir
-            </button>
+            <button class="btn" id="btnConfirmAll" disabled>Sí, Autorizar todos</button>
+            <button class="btn secondary" id="btnCancel">Cancelar</button>
         </div>
     </div>
 
-    <div class="paper-container">
-        <h1>Autorizaciones de Pedidos</h1>
-
-        <div class="header-row">
-            <span></span>
-            <span>FECHA: <span id="current-date"></span></span>
-        </div>
-
-        <div class="signature-box-container">
-            <div style="width:250px;">
-                <span class="signature-label">Firma/s autorizada/s:</span>
-                <div class="signature-box"></div>
-            </div>
-        </div>
-
-        <!-- Encabezado fijo + cuerpo con scroll -->
-        <div class="table-wrapper">
-            <!-- Tabla de encabezado (solo pantalla) -->
-            <table class="header-table">
-                <colgroup>
-                    <col class="data-col-1">
-                    <col class="data-col-2">
-                    <col class="data-col-3">
-                    <col class="data-col-4">
-                    <col class="data-col-5">
-                    <col class="data-col-6">
-                    <col class="data-col-7">
-                    <col class="data-col-8">
-                    <col class="data-col-9">
-                    <col class="data-col-10">
-                    <col class="data-col-11">
-                </colgroup>
-                <thead>
-                    <tr>
-                        <th rowspan="2" style="vertical-align:middle;">Proveedor</th>
-                        <th rowspan="2" style="vertical-align:middle;">Descripción</th>
-                        <th rowspan="2" style="vertical-align:middle;">Fecha Pedido</th>
-                        <th rowspan="2" style="vertical-align:middle;">Comprador</th>
-                        <th rowspan="2" style="vertical-align:middle;">Medio pedido</th>
-                        <th rowspan="2" style="vertical-align:middle;">Edificio</th>
-                        <th rowspan="2" style="vertical-align:middle;">Solicitante</th>
-                        <th rowspan="2" style="vertical-align:middle;">GDC</th>
-                        <th colspan="2" class="text-center">AUTORIZADO</th>
-                        <th rowspan="2" class="text-right" style="vertical-align:middle;">Importe<br>s/iva</th>
-                    </tr>
-                    <tr>
-                        <th class="text-center">SI</th>
-                        <th class="text-center">NO</th>
-                    </tr>
-                </thead>
-            </table>
-
-            <!-- Cuerpo con scroll (pantalla) + thead duplicado (solo impresión) -->
-            <div class="body-scroll">
-                <table class="body-table" id="orders-table">
-                    <colgroup>
-                        <col class="data-col-1">
-                        <col class="data-col-2">
-                        <col class="data-col-3">
-                        <col class="data-col-4">
-                        <col class="data-col-5">
-                        <col class="data-col-6">
-                        <col class="data-col-7">
-                        <col class="data-col-8">
-                        <col class="data-col-9">
-                        <col class="data-col-10">
-                        <col class="data-col-11">
-                    </colgroup>
-
-                    <!-- thead para IMPRESIÓN (repetido en cada página) -->
-                    <thead class="print-only">
-                        <tr>
-                            <th rowspan="2" style="vertical-align:middle;">Proveedor</th>
-                            <th rowspan="2" style="vertical-align:middle;">Descripción</th>
-                            <th rowspan="2" style="vertical-align:middle;">Fecha Pedido</th>
-                            <th rowspan="2" style="vertical-align:middle;">Comprador</th>
-                            <th rowspan="2" style="vertical-align:middle;">Medio pedido</th>
-                            <th rowspan="2" style="vertical-align:middle;">Edificio</th>
-                            <th rowspan="2" style="vertical-align:middle;">Solicitante</th>
-                            <th rowspan="2" style="vertical-align:middle;">GDC</th>
-                            <th colspan="2" class="text-center">AUTORIZADO</th>
-                            <th rowspan="2" class="text-right" style="vertical-align:middle;">Importe<br>s/iva</th>
-                        </tr>
-                        <tr>
-                            <th class="text-center">SI</th>
-                            <th class="text-center">NO</th>
-                        </tr>
-                    </thead>
-
-                    <tbody id="orders-tbody"><!-- filas por JS --></tbody>
-                </table>
-            </div>
-        </div>
-
-        <div id="loading" style="text-align:center; padding:12px; flex:0 0 auto;">
-            <div class="spinner"
-                style="border:4px solid #f3f3f3; border-top:4px solid #2563eb; border-radius:50%; width:30px; height:30px; animation:spin 1s linear infinite; display:inline-block;">
-            </div>
-            <p style="margin:8px 0 0;">Cargando pedidos pendientes...</p>
-        </div>
-
-        <div id="no-data" style="display:none; text-align:center; padding:12px; color:#666; flex:0 0 auto;">
-            No hay pedidos pendientes de autorización.
+    <!-- Overlay “Procesando…” + Toast -->
+    <div id="busy" class="busy" aria-hidden="true">
+        <div>
+            <div>Procesando autorización…</div>
+            <div class="spinner" role="progressbar" aria-label="Cargando"></div>
         </div>
     </div>
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-    <!-- Modal -->
-    <div id="auth-modal" class="modal-overlay">
-        <div class="modal-card">
-            <div class="modal-icon"><span class="material-icons-round" style="font-size:28px;">verified_user</span>
-            </div>
-            <div class="modal-title">¿Autorizar Pedidos?</div>
-            <p class="modal-text">
-                Se marcarán como autorizados un total de <strong id="modal-count">0</strong> pedidos.<br>
-                Esta acción quedará registrada.
-            </p>
-            <div class="modal-actions">
-                <button class="btn-modal btn-cancel" onclick="closeModal()">Cancelar</button>
-                <button class="btn-modal btn-confirm" onclick="confirmAuthorization()">Sí, Autorizar</button>
-            </div>
-        </div>
-    </div>
+    <!-- Variables inyectadas desde doGet (opcional) -->
+    <script>
+        const APP_URL = <?!= JSON.stringify(appUrl || '') ?>;
+        const ORDERS_PAGE = <?!= JSON.stringify(ordersPage || 'dashboard') ?>;
+    </script>
 
     <script>
-        let currentPendingOrders = [];
+        (function () {
+            /* Estado */
+            const state = { rows: [], selected: new Set() };
 
-        document.addEventListener('DOMContentLoaded', () => {
-            const today = new Date();
-            document.getElementById('current-date').textContent = today.toLocaleDateString();
-            loadOrders();
-        });
+            /* Refs */
+            const elHoy = document.getElementById('hoy');
+            const lblTotal = document.getElementById('lblTotal');
+            const lblSel = document.getElementById('lblSel');
+            const tbody = document.getElementById('tbody');
+            const emptyBox = document.getElementById('emptyBox');
+            const chkAll = document.getElementById('chkAll');
+            const badge = document.getElementById('pendingBadge');
 
-        function goBack() { window.top.location.href = APP_URL + '?page=orders_list'; }
-
-        function loadOrders() {
-            const btnAuth = document.getElementById('btn-main-auth');
-
-            google.script.run
-                .withSuccessHandler(orders => {
-                    currentPendingOrders = orders || [];
-                    const hasData = currentPendingOrders.length > 0;
-
-                    document.getElementById('loading').style.display = 'none';
-                    document.getElementById('no-data').style.display = hasData ? 'none' : 'block';
-                    btnAuth.disabled = !hasData;
-
-                    renderOrders(currentPendingOrders);
-                })
-                .withFailureHandler(err => {
-                    document.getElementById('loading').innerHTML = `<p style="color:red">Error: ${err.message}</p>`;
-                })
-                .getPendingOrders();
-        }
-
-        function renderOrders(orders) {
-            const tbody = document.getElementById('orders-tbody');
-            tbody.innerHTML = '';
-
-            (orders || []).forEach(order => {
-                const tr = document.createElement('tr');
-                const dateStr = order['Fecha Pedido'] ? new Date(order['Fecha Pedido']).toLocaleDateString() : '';
-
-                tr.innerHTML = `
-          <td>${order['Proveedor'] || ''}</td>
-          <td>${order['Descripción'] || ''}</td>
-          <td>${dateStr}</td>
-          <td>${order['Comprador'] || ''}</td>
-          <td>${order['Medio Pedido'] || ''}</td>
-          <td>${order['Edificio'] || ''}</td>
-          <td>${order['Solicitante'] || ''}</td>
-          <td>${order['GDC_PINV'] || ''}</td>
-          <td class="text-center"><div style="width:12px;height:12px;border:1px solid #000;margin:0 auto;background:#fff;"></div></td>
-          <td class="text-center"><div style="width:12px;height:12px;border:1px solid #000;margin:0 auto;background:#fff;"></div></td>
-          <td class="text-right">${order['Importe'] || ''}</td>
-        `;
-                tbody.appendChild(tr);
+            // ===== Barra superior =====
+            document.getElementById('btnBack').addEventListener('click', function () {
+                google.script.run
+                    .withSuccessHandler(function (url) {
+                        if (url && typeof url === 'string' && url.length) {
+                            window.top.location.href = url;
+                            return;
+                        }
+                        const base = (window.top && window.top.location) ? window.top.location : window.location;
+                        const target = base.origin + base.pathname + (base.search ? base.search + '&' : '?') + 'page=' + encodeURIComponent(ORDERS_PAGE);
+                        window.location.href = target;
+                    })
+                    .getOrdersListUrl();
             });
-        }
 
-        function openModal() {
-            if (currentPendingOrders.length === 0) return;
-            document.getElementById('modal-count').textContent = currentPendingOrders.length;
-            document.getElementById('auth-modal').classList.add('active');
-        }
-        function closeModal() { document.getElementById('auth-modal').classList.remove('active'); }
-        document.getElementById('auth-modal').addEventListener('click', function (e) {
-            if (e.target === this) closeModal();
-        });
+            document.getElementById('btnPrint').addEventListener('click', () => window.print());
+            document.getElementById('btnOpenAuthorize').addEventListener('click', openDialog);
 
-        function confirmAuthorization() {
-            const confirmBtn = document.querySelector('.btn-confirm');
-            const originalText = confirmBtn.textContent;
+            // ===== Modal refs =====
+            const dlg = document.getElementById('dialog');
+            const backdrop = document.getElementById('backdrop');
+            const btnCancel = document.getElementById('btnCancel');
+            const btnSel = document.getElementById('btnConfirmSelected');
+            const btnAll = document.getElementById('btnConfirmAll');
+            const cntSelEl = document.getElementById('cntSel');
+            const cntTotEl = document.getElementById('cntTot');
+            const cntConfirmEl = document.getElementById('cntConfirm');
+            const selList = document.getElementById('selList');
+            const firmasEl = document.getElementById('firmas');
+            const btnSelCount = document.getElementById('btnSelCount');
+            const btnSelTotal = document.getElementById('btnSelTotal');
 
-            confirmBtn.textContent = 'Procesando...';
-            confirmBtn.disabled = true;
+            btnCancel.addEventListener('click', closeDialog);
+            backdrop.addEventListener('click', closeDialog);
 
-            const ids = currentPendingOrders.map(o => o['Id_Pedido']);
+            // ===== Busy + Toast =====
+            const busy = document.getElementById('busy');
+            const toast = document.getElementById('toast');
+            function showBusy(on = true) { busy.classList.toggle('show', on); }
+            function showToast(msg, ms = 2200) { toast.textContent = msg; toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), ms); }
 
-            google.script.run
-                .withSuccessHandler(res => {
-                    closeModal();
-                    confirmBtn.textContent = originalText;
-                    confirmBtn.disabled = false;
+            // ===== Utilidades de importe y formato =====
+            const currencyEs = new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' });
+            function parseImporte(val) {
+                if (val == null || val === '') return 0;
+                if (typeof val === 'number') return val;
+                const s = String(val).trim();
+                const normalized = s.replace(/\./g, '').replace(',', '.'); // miles y coma decimal
+                const n = parseFloat(normalized);
+                return isNaN(n) ? 0 : n;
+            }
+            function computeSelectionTotals() {
+                let total = 0;
+                const ids = Array.from(state.selected);
+                if (!ids.length) return { count: 0, total: 0 };
+                const byId = new Map(state.rows.map(r => [String(r['Id_Pedido'] || ''), r]));
+                ids.forEach(id => {
+                    const r = byId.get(String(id));
+                    if (r) total += parseImporte(r['Importe']);
+                });
+                return { count: ids.length, total };
+            }
 
-                    document.getElementById('loading').style.display = 'block';
-                    document.querySelector('#orders-tbody').innerHTML = '';
+            // ===== Habilitación de botones según firmas + selección =====
+            function updateButtonsEnabled() {
+                const hasFirmas = !!(firmasEl && firmasEl.value.trim());
+                const selTotals = computeSelectionTotals();
+                btnSel.disabled = !(hasFirmas && selTotals.count > 0);
+                btnAll.disabled = !hasFirmas;
+                if (btnSelCount) btnSelCount.textContent = String(selTotals.count);
+                if (btnSelTotal) btnSelTotal.textContent = currencyEs.format(selTotals.total);
+            }
+            if (firmasEl) {
+                firmasEl.addEventListener('input', updateButtonsEnabled);
+            }
 
-                    loadOrders(); // recargar
-                })
-                .withFailureHandler(err => {
-                    alert('Error: ' + err.message);
-                    confirmBtn.textContent = originalText;
-                    confirmBtn.disabled = false;
-                    closeModal();
-                })
-                .markOrdersAsAuthorized(ids);
-        }
+            // ===== Seleccionar todo (columna SI) =====
+            chkAll.addEventListener('change', function (ev) {
+                const check = ev.target.checked;
+                const boxes = tbody.querySelectorAll('input[type="checkbox"][data-id][data-col="si"]');
+                state.selected.clear();
+                boxes.forEach(ch => {
+                    ch.checked = check;
+                    if (check) state.selected.add(ch.dataset.id);
+                    const no = tbody.querySelector('input[type="checkbox"][data-id="' + ch.dataset.id + '"][data-col="no"]');
+                    if (no) no.checked = !check && no.checked ? true : false;
+                });
+                updateSelectionSummary();
+                updateButtonsEnabled();
+            });
 
-        // Spinner keyframes
-        const style = document.createElement('style');
-        style.textContent = `@keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}`;
-        document.head.appendChild(style);
+            // ===== Abrir/Cerrar diálogo =====
+            function openDialog() {
+                cntSelEl.textContent = state.selected.size;
+                cntTotEl.textContent = state.rows.length;
+                cntConfirmEl.textContent = state.selected.size > 0 ? state.selected.size : state.rows.length;
+
+                if (state.selected.size) {
+                    const selectedMap = new Map(state.rows.map(r => [String(r['Id_Pedido']), r]));
+                    const items = Array.from(state.selected).map(id => {
+                        const r = selectedMap.get(String(id)) || {};
+                        const prov = r['Proveedor'] || '';
+                        const desc = r['Descripción'] || '';
+                        const imp = (r['Importe'] != null ? r['Importe'] : '');
+                        // ⬇️ ID eliminado del detalle mostrado
+                        return '<li><strong>' + escapeHTML(prov) + '</strong> — ' + escapeHTML(desc) + ' — Importe: ' + escapeHTML(imp) + '</li>';
+                    });
+                    selList.innerHTML = items.join('');
+                } else {
+                    selList.innerHTML = '<li class="muted">Sin selección.</li>';
+                }
+
+                updateButtonsEnabled();
+
+                backdrop.classList.add('show');
+                dlg.classList.add('show');
+                firmasEl && firmasEl.focus();
+            }
+            function closeDialog() {
+                dlg.classList.remove('show');
+                backdrop.classList.remove('show');
+            }
+
+            // ===== Confirmar: seleccionados =====
+            btnSel.addEventListener('click', function () {
+                const firmas = (firmasEl && firmasEl.value.trim()) || '';
+                if (!firmas) {
+                    showToast('Introduce la firma antes de autorizar.', 2800);
+                    firmasEl && (firmasEl.focus(), firmasEl.scrollIntoView({ behavior: 'smooth', block: 'center' }));
+                    return;
+                }
+                const payload = { userAgent: navigator.userAgent, extras: firmas, firmas: firmas };
+                const ids = Array.from(state.selected);
+                if (!ids.length) return;
+
+                btnSel.disabled = true; btnAll.disabled = true; showBusy(true);
+
+                google.script.run
+                    .withSuccessHandler(function (res) {
+                        showBusy(false); closeDialog();
+                        showToast('Autorizados (selección): ' + (res && res.count !== undefined ? res.count : 0));
+                        loadData();
+                    })
+                    .withFailureHandler(function (err) {
+                        showBusy(false); updateButtonsEnabled();
+                        showToast('Error: ' + (err && err.message ? err.message : err), 3200);
+                    })
+                    .markOrdersAsAuthorized(ids, payload);
+            });
+
+            // ===== Confirmar: todos =====
+            btnAll.addEventListener('click', function () {
+                const firmas = (firmasEl && firmasEl.value.trim()) || '';
+                if (!firmas) {
+                    showToast('Introduce la firma antes de autorizar.', 2800);
+                    firmasEl && (firmasEl.focus(), firmasEl.scrollIntoView({ behavior: 'smooth', block: 'center' }));
+                    return;
+                }
+                const payload = { userAgent: navigator.userAgent, extras: firmas, firmas: firmas };
+
+                btnSel.disabled = true; btnAll.disabled = true; showBusy(true);
+
+                google.script.run
+                    .withSuccessHandler(function (res) {
+                        showBusy(false); closeDialog();
+                        showToast('Autorizados (todos): ' + (res && res.count !== undefined ? res.count : 0));
+                        loadData();
+                    })
+                    .withFailureHandler(function (err) {
+                        showBusy(false); updateButtonsEnabled();
+                        showToast('Error: ' + (err && err.message ? err.message : err), 3200);
+                    })
+                    .authorizeAllPendingOrders(payload);
+            });
+
+            // ===== Carga de datos =====
+            function loadData() {
+                try {
+                    const hoy = new Date();
+                    elHoy.textContent = hoy.toLocaleDateString(undefined, { year: 'numeric', month: '2-digit', day: '2-digit' });
+                } catch (e) { }
+
+                state.rows = [];
+                state.selected.clear();
+                tbody.innerHTML = '';
+                lblTotal.textContent = '0';
+                lblSel.textContent = '0';
+                emptyBox.style.display = 'none';
+
+                google.script.run
+                    .withSuccessHandler(function (rows) {
+                        state.rows = rows || [];
+                        if (!state.rows.length) emptyBox.style.display = 'block';
+                        renderRows(state.rows);
+                        lblTotal.textContent = String(state.rows.length);
+                        lblSel.textContent = String(state.selected.size);
+
+                        // Badge en “Autorizar Pedidos”
+                        if (badge) {
+                            if (state.rows.length > 0) {
+                                badge.textContent = state.rows.length;
+                                badge.style.display = 'inline-block';
+                            } else {
+                                badge.style.display = 'none';
+                            }
+                        }
+                    })
+                    .withFailureHandler(function (err) {
+                        emptyBox.style.display = 'block';
+                        emptyBox.textContent = 'Error cargando pedidos: ' + (err && err.message ? err.message : err);
+                    })
+                    .getPendingOrders();
+            }
+
+            function renderRows(rows) {
+                const frag = document.createDocumentFragment();
+                rows.forEach(r => {
+                    const tr = document.createElement('tr');
+                    const id = String(r['Id_Pedido'] || '');
+
+                    tr.appendChild(tdText(r['Proveedor']));      // Proveedor
+                    tr.appendChild(tdText(r['Descripción']));    // Descripción
+                    tr.appendChild(tdText(r['Fecha Pedido'] ? formatDate(r['Fecha Pedido']) : '')); // Fecha
+                    tr.appendChild(tdText(r['Comprador']));      // Comprador
+                    tr.appendChild(tdText(r['Medio Pedido']));   // Medio
+                    tr.appendChild(tdText(r['Edificio']));       // Edificio
+                    tr.appendChild(tdText(r['Solicitante']));    // Solicitante
+                    tr.appendChild(tdText(r['GDC_PINV']));       // GDC
+
+                    // AUTORIZADO - SI (selección)
+                    const tdSi = document.createElement('td'); tdSi.className = 'center';
+                    const chkSi = document.createElement('input'); chkSi.type = 'checkbox';
+                    chkSi.setAttribute('data-id', id);
+                    chkSi.setAttribute('data-col', 'si');
+                    chkSi.addEventListener('change', function (ev) {
+                        if (ev.target.checked) {
+                            state.selected.add(id);
+                            const no = tbody.querySelector('input[type="checkbox"][data-id="' + id + '"][data-col="no"]');
+                            if (no) no.checked = false;
+                        } else {
+                            state.selected.delete(id);
+                        }
+                        updateSelectionSummary();
+                        updateButtonsEnabled();
+                    });
+                    tdSi.appendChild(chkSi);
+                    tr.appendChild(tdSi);
+
+                    // AUTORIZADO - NO (visual)
+                    const tdNo = document.createElement('td'); tdNo.className = 'center';
+                    const chkNo = document.createElement('input'); chkNo.type = 'checkbox';
+                    chkNo.setAttribute('data-id', id);
+                    chkNo.setAttribute('data-col', 'no');
+                    chkNo.addEventListener('change', function (ev) {
+                        if (ev.target.checked) {
+                            const si = tbody.querySelector('input[type="checkbox"][data-id="' + id + '"][data-col="si"]');
+                            if (si) { si.checked = false; state.selected.delete(id); }
+                        }
+                        updateSelectionSummary();
+                        updateButtonsEnabled();
+                    });
+                    tdNo.appendChild(chkNo);
+                    tr.appendChild(tdNo);
+
+                    tr.appendChild(tdNum(r['Importe']));         // Importe s/iva
+
+                    frag.appendChild(tr);
+                });
+                tbody.innerHTML = '';
+                tbody.appendChild(frag);
+            }
+
+            function tdText(val) { const td = document.createElement('td'); td.textContent = val == null ? '' : String(val); return td; }
+            function tdNum(val) { const td = document.createElement('td'); td.className = 'num'; td.textContent = (val == null || val === '') ? '' : String(val); return td; }
+
+            function updateSelectionSummary() {
+                lblSel.textContent = String(state.selected.size);
+                const total = state.rows.length;
+                const sel = state.selected.size;
+                chkAll.checked = (total > 0 && sel === total);
+            }
+
+            function formatDate(isoOrDateStr) {
+                try {
+                    const d = new Date(isoOrDateStr);
+                    if (!isFinite(d)) return isoOrDateStr || '';
+                    return d.toLocaleDateString(undefined, { year: 'numeric', month: '2-digit', day: '2-digit' });
+                } catch (e) { return isoOrDateStr || ''; }
+            }
+
+            function escapeHTML(s) {
+                s = String(s == null ? '' : s);
+                return s.replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[m]);
+            }
+
+            // Inicial
+            loadData();
+        })();
     </script>
+
 </body>
 
 </html>
