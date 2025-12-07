@@ -1,4 +1,3 @@
-
 // ==========================================
 // 🚀 GESTIÓN DE PEDIDOS - BACKEND (con caché + export)
 // ==========================================
@@ -16,7 +15,7 @@ function onOpen() {
 }
 
 // URL manual de respaldo
-const MANUAL_WEB_APP_URL = 'https://script.google.com/a/macros/unav.es/s/AKfycbwv5_Upn8HCMUwNua79yZvVuD9cVtyL-ORAmva72SgjQj48BgfNQ8jDrbN2s6vrX0hv/exec';
+const MANUAL_WEB_APP_URL = 'https://script.google.com/a/macros/unav.es/s/AKfycbyyS1Dh-sgCcZ56QL2mb7SyFe7kY2K7BnxIceAaUDLZej6euUlj9nZO-YJOLL2IDEEb/exec';
 
 function openWebApp() {
   var url = MANUAL_WEB_APP_URL || ScriptApp.getService().getUrl();
@@ -98,23 +97,39 @@ function sanitizeValue(value) {
   if (value === null || value === undefined) return '';
   return value;
 }
+
+// ==========================================
+// 📊 MÉTODO getData() - PARA PROVEEDORES/EMPRESAS/TIPOS
+// ==========================================
 function getData(sheetName, maxRows = 0) {
   try {
     const sheet = getSheet(sheetName);
     const lastRow = sheet.getLastRow();
-    if (lastRow < 2) return [];
+    
+    // Si no hay datos (solo cabecera o vacío), devolver array vacío
+    if (lastRow < 2) {
+      console.log(`getData: ${sheetName} está vacío (lastRow=${lastRow})`);
+      return [];
+    }
+
+    const lastCol = sheet.getLastColumn();
+    if (lastCol === 0) {
+      console.log(`getData: ${sheetName} no tiene columnas`);
+      return [];
+    }
 
     let startRow = 2;
     let numRows = lastRow - 1;
 
+    // Si maxRows > 0, tomar solo las últimas filas
     if (maxRows > 0 && numRows > maxRows) {
       startRow = lastRow - maxRows + 1;
       numRows = maxRows;
     }
 
-    const range = sheet.getRange(startRow, 1, numRows, sheet.getLastColumn());
+    const range = sheet.getRange(startRow, 1, numRows, lastCol);
     const data = range.getValues();
-    const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+    const headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
 
     return data.map(row => {
       let obj = {};
@@ -122,12 +137,55 @@ function getData(sheetName, maxRows = 0) {
       return obj;
     });
   } catch (e) {
-    console.error('Error en getData: ' + e);
+    console.error(`Error en getData(${sheetName}): ${e}`);
     return [];
   }
 }
 
-// --- Dropdowns
+// ==========================================
+// 📊 MÉTODO ESPECÍFICO PARA SUPPLIERS (getAllData)
+// ==========================================
+function getAllData() {
+  try {
+    return {
+      suppliers: getData(SHEETS.PROVEEDORES, 0),
+      companies: getData(SHEETS.EMPRESAS, 0),
+      types: getData(SHEETS.TIPOS, 0)
+    };
+  } catch (e) {
+    console.error('Error en getAllData: ' + e);
+    return { suppliers: [], companies: [], types: [] };
+  }
+}
+
+// ==========================================
+// 🔍 MÉTODO ESPECÍFICO PARA SUPPLIERS (getSuppliersByCompany)
+// ==========================================
+function getSuppliersByCompany(companyId) {
+  try {
+    const allSuppliers = getData(SHEETS.PROVEEDORES, 0);
+    return allSuppliers.filter(s => s.Empresa == companyId);
+  } catch (e) {
+    console.error('Error en getSuppliersByCompany: ' + e);
+    return [];
+  }
+}
+
+// ==========================================
+// 📍 MÉTODO PARA BÚSQUEDA DE CP (lookupPostalCode)
+// ==========================================
+function lookupPostalCode(cp) {
+  try {
+    // Simulación simple - en producción podrías usar una API
+    // Por ahora devolvemos array vacío para que el usuario escriba manualmente
+    return [];
+  } catch (e) {
+    console.error('Error en lookupPostalCode: ' + e);
+    return [];
+  }
+}
+
+// --- Dropdowns (ESPECÍFICO PARA PEDIDOS)
 function getDropdownData() {
   try {
     return {
@@ -140,6 +198,7 @@ function getDropdownData() {
       solicitantes: getData(SHEETS.SOLICITANTES, 0).map(s => ({ id: s['Id_Solicitante'], name: s['Nombre Solicitante'] }))
     };
   } catch (e) {
+    console.error('Error en getDropdownData: ' + e);
     return { empresas: [], tipos: [], compradores: [], medios: [], zonas: [], edificios: [], solicitantes: [] };
   }
 }
@@ -541,8 +600,12 @@ function getOrderById(orderId) {
     });
 
     return order;
-  } catch (e) { return null; }
+  } catch (e) { 
+    console.error('Error en getOrderById: ' + e);
+    return null; 
+  }
 }
+
 function updateOrderField(orderId, field, value) {
   try {
     const sheet  = getSheet(SHEETS.PEDIDOS);
@@ -563,6 +626,7 @@ function updateOrderField(orderId, field, value) {
     return { success: true };
   } catch (e) { throw e; }
 }
+
 function saveRecord(sheetName, formObject) {
   try {
     const sheet   = getSheet(sheetName);
@@ -590,6 +654,7 @@ function saveRecord(sheetName, formObject) {
     return { success: true, id: formObject[idField], isNew };
   } catch (e) { throw new Error(e.message); }
 }
+
 function deleteRecord(sheetName, id) {
   try {
     const sheet  = getSheet(sheetName);
@@ -599,6 +664,7 @@ function deleteRecord(sheetName, id) {
     throw new Error('Registro no encontrado');
   } catch (e) { throw e; }
 }
+
 function uploadFileToDrive(data, filename, mimetype) {
   try {
     var folder = DriveApp.getFolderById("1uR9yHK5IZcbCdzcaMAGfkri8RHzEniMY");
