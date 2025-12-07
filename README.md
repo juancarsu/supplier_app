@@ -1,7 +1,10 @@
 # 📦 Sistema de Gestión de Pedidos y Proveedores
 
-> **Versión 1.0** - Desarrollado por Juan Carlos Suárez  
+> **Versión 1.4** - Desarrollado por Juan Carlos Suárez  
 > Aplicación web construida con Google Apps Script para la gestión integral de proveedores, empresas y pedidos.
+> Licencia: Creative Commons Reconocimiento (CC BY) creativecommons.org
+>
+>  Puedes usar, copiar, modificar y distribuir este código (sin fines comerciales), siempre que cites a Juan Carlos Suárez como autor original.
 
 ---
 
@@ -374,11 +377,14 @@ Punto de acceso principal con tres secciones:
 
 ### Autorizaciones de Pedidos
 
+**NOTA**: La autorización de pedidos queda registrada en un archivo de auditoría.
+
 #### Imprimir Formulario de Autorizaciones
 1. Dashboard > Listado de Pedidos > Autorizaciones (barra lateral)
 2. Se cargan pedidos NO autorizados
-3. Vista optimizada para impresión A4 landscape
-4. Click en "Imprimir"
+3. Vista optimizada para impresión A4 landscape. 
+5. Click en "Imprimir". Puedes imprimirlo o guardarlo como PDF. Quizás tengas que ajustar
+   la orientación y escala para ajustarlos a tu impresora.
 
 **Características de Impresión:**
 - Formato A4 horizontal
@@ -389,16 +395,26 @@ Punto de acceso principal con tres secciones:
 - Fecha automática
 
 **En Pantalla:**
-- Header fijo al hacer scroll
 - Scroll vertical del cuerpo de tabla
-- Botón "Volver" y "Marcar Todo Autorizado"
+- Botón "Volver", Imprimir y "Autorizar Pedidos"
+- Listado de pedidos pendientes de autorizar con casillas interactivas.
 
 #### Autorizar Masivamente
 1. En vista de Autorizaciones
-2. Click en "Marcar Todo Autorizado"
-3. Confirmar en modal
-4. Todos los pedidos visibles se marcan como "Sí" en campo Autorizado
-5. La lista se recarga automáticamente
+2. Click en "Autorizar Pedidos (N)". N indica el número de pedidos pendientes de autorizar.
+3. Confirmar nombre en el modal para firmar.
+4. Click en "Sí, Autorizar todos"
+5. Todos los pedidos se marcan como "Sí" en campo Autorizado
+6. La lista se recarga automáticamente
+
+#### Autorizar Selectivamente
+1. En vista de Autorizaciones
+2. Seleccionar "Sí" en las casillas de verificación.
+3. Click en "Autorizar Pedidos (N)". N indica el número de pedidos pendientes de autorizar.
+4. Confirmar nombre en el modal para firmar.
+5. Click en "Autorizar seleccionados". El botón indica el importe que se va a autorizar.
+6. Todos los pedidos seleccionados se marcan como "Sí" en campo Autorizado
+7. La lista se recarga automáticamente
 
 ### Configuración de Datos Auxiliares
 
@@ -654,7 +670,7 @@ Apps Script > Ejecutor > Ver ejecuciones recientes
 
 ### Registro de Cambios
 
-**v1.0 - Diciembre 2025**
+**v1.4 - Diciembre 2025**
 - ✅ Lanzamiento inicial
 - ✅ CRUD Proveedores/Empresas
 - ✅ Gestión completa de Pedidos
