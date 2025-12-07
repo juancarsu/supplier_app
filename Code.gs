@@ -1,7 +1,11 @@
-
 // ==========================================
 // 🚀 GESTIÓN DE PEDIDOS - BACKEND (caché + export + auditoría)
-// Versión 1.4 (sin URL manual, navegación robusta, búsqueda, export y autorizaciones)
+// Versión 1.4
+// ==========================================
+// Desarrollado por Juan Carlos Suárez
+// Aplicación web construida con Google Apps Script para la gestión integral de proveedores, empresas y pedidos. Licencia: Creative Commons Reconocimiento (CC BY) creativecommons.org
+
+// Puedes usar, copiar, modificar y distribuir este código (sin fines comerciales), siempre que cites a Juan Carlos Suárez como autor original./*
 // ==========================================
 
 // ===== Helpers de URL / navegación =====
